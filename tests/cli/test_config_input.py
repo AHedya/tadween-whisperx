@@ -117,6 +117,14 @@ class TestConfigInputS3:
                 "--download-path",
                 str(download_dir),
                 "--keep-downloaded",
+                "--max-retries",
+                "5",
+                "--multipart-threshold-mb",
+                "32",
+                "--max-workers",
+                "8",
+                "--max-concurrency-per-file",
+                "4",
             ],
         )
         assert result.exit_code == 0
@@ -127,6 +135,10 @@ class TestConfigInputS3:
         assert config.input.endpoint_url == "http://localhost:9000"
         assert config.input.region_name == "eu-west-1"
         assert config.input.keep_downloaded is True
+        assert config.input.max_retries == 5
+        assert config.input.multipart_threshold_mb == 32
+        assert config.input.max_workers == 8
+        assert config.input.max_concurrency_per_file == 4
 
     def test_s3_input_overwrites_local(self, runner: CliRunner, isolated_config):
         from tadween_whisperx.config import LocalInputConfig

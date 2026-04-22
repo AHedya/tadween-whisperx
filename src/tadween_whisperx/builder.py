@@ -147,7 +147,7 @@ class WorkflowBuilder:
         except ConfigError as e:
             pth = Path(os.getcwd()) / "json-repo"
             pth.mkdir(exist_ok=True)
-            repo = FsRepo(pth, Artifact)
+            repo = FsJsonRepo(pth, Artifact)
             self.logger.warning(
                 f"Error initializing repo from config. Falling back default json repo at [{pth}]. Error: {e}."
             )

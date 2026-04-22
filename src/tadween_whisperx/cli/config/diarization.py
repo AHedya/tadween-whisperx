@@ -11,6 +11,7 @@ def diarization_cmd(
     model_name: str | None = typer.Option(None, "--model-name", help="Model name"),
     device: str | None = typer.Option(None, "--device", help="Device to use"),
     token: str | None = typer.Option(None, "--token", help="HuggingFace token"),
+    cache_dir: str | None = typer.Option(None, "--cache-dir", help="Cache directory"),
 ) -> None:
     """Configure diarization settings."""
     updates = {
@@ -18,6 +19,7 @@ def diarization_cmd(
         "model_name": model_name,
         "device": device,
         "token": token,
+        "cache_dir": cache_dir,
     }
     updates = {k: v for k, v in updates.items() if v is not None}
 

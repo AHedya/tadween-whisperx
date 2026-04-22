@@ -15,6 +15,7 @@ from ...config import (
 from .alignment import alignment_cmd
 from .diarization import diarization_cmd
 from .input import app as input_app
+from .loader import loader_cmd
 from .normalizer import normalizer_cmd
 from .repo import repo_app  # noqa: E402
 from .transcription import transcription_cmd
@@ -25,6 +26,8 @@ class ConfigComponent(StrEnum):
     re = "re"
     input = "input"
     in_ = "in"
+    loader = "loader"
+    lo = "lo"
     diarization = "diarization"
     di = "di"
     transcription = "transcription"
@@ -39,6 +42,7 @@ class ConfigComponent(StrEnum):
         mapping = {
             "re": "repo",
             "in": "input",
+            "lo": "loader",
             "di": "diarization",
             "tr": "transcription",
             "al": "alignment",
@@ -52,6 +56,7 @@ COMPONENTS_PANEL = "Components settings"
 Config = typer.Typer(name="config", help="Manage tadween-whisperx configuration.")
 Config.add_typer(repo_app, name="repo", rich_help_panel=COMPONENTS_PANEL)
 Config.add_typer(input_app, name="input", rich_help_panel=COMPONENTS_PANEL)
+Config.command(name="loader", rich_help_panel=COMPONENTS_PANEL)(loader_cmd)
 Config.command(name="diarization", rich_help_panel=COMPONENTS_PANEL)(diarization_cmd)
 Config.command(name="alignment", rich_help_panel=COMPONENTS_PANEL)(alignment_cmd)
 Config.command(name="normalizer", rich_help_panel=COMPONENTS_PANEL)(normalizer_cmd)

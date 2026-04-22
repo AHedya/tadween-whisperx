@@ -119,44 +119,45 @@ def s3(
         bool,
         typer.Option("--keep/--no-keep", help="Whether to keep downloaded files"),
     ] = False,
+    max_retries: Annotated[
+        int | None, typer.Option("--max-retries", help="Maximum download retries")
+    ] = None,
+    multipart_threshold_mb: Annotated[
+        int | None,
+        typer.Option("--multipart-threshold", help="Multipart threshold in MB"),
+    ] = None,
+    max_workers: Annotated[
+        int | None, typer.Option("--max-workers", help="Maximum download workers")
+    ] = None,
+    max_concurrency: Annotated[
+        int | None,
+        typer.Option("--max-concurrency", help="Maximum concurrency per file"),
+    ] = None,
 ):
     """Run pipeline on S3 objects."""
     config = load_config()
 
-    # Merge existing S3 config if available to avoid re-typing everything
-    if isinstance(config.input, S3InputConfig):
-        input_cfg = config.input.model_copy(
-            update={
-                "bucket": bucket,
-                "prefix": prefix,
-                "aws_access_key_id": access_key or config.input.aws_access_key_id,
-                "aws_secret_access_key": secret_key
-                or config.input.aws_secret_access_key,
-                "endpoint_url": endpoint_url or config.input.endpoint_url,
-                "region_name": region,
-                "keep_downloaded": keep,
-            }
-        )
-        if download_path:
-            input_cfg.download_path = download_path
-    else:
-        # Fallback to defaults for S3InputConfig if no base config is present
-        # We need to handle required fields carefully
-        input_cfg_data = {
-            "bucket": bucket,
-            "prefix": prefix,
-            "aws_access_key_id": access_key,
-            "aws_secret_access_key": secret_key,
-            "endpoint_url": endpoint_url,
-            "region_name": region,
-            "keep_downloaded": keep,
-        }
-        if download_path:
-            input_cfg_data["download_path"] = download_path
+    updates = {
+        "bucket": bucket,
+        "prefix": prefix,
+        "aws_access_key_id": access_key,
+        "aws_secret_access_key": secret_key,
+        "endpoint_url": endpoint_url,
+        "region_name": region,
+        "keep_downloaded": keep,
+        "download_path": download_path,
+        "max_retries": max_retries,
+        "multipart_threshold_mb": multipart_threshold_mb,
+        "max_workers": max_workers,
+        "max_concurrency_per_file": max_concurrency,
+    }
+    updates = {k: v for k, v in updates.items() if v is not None}
 
-        # Filters None values so Pydantic defaults kick in
-        input_cfg_data = {k: v for k, v in input_cfg_data.items() if v is not None}
-        input_cfg = S3InputConfig.model_validate(input_cfg_data)
+    # Merge existing S3 config if available
+    if isinstance(config.input, S3InputConfig):
+        input_cfg = config.input.model_copy(update=updates)
+    else:
+        input_cfg = S3InputConfig.model_validate(updates)
 
     config.input = input_cfg
     _execute_pipeline(config)

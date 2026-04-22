@@ -18,6 +18,7 @@ class TranscriptionModelConfig(BaseModel):
     compute_type: str = "float16"
     language: str | None = None
     threads: int = 4
+    batch_size: int = 8
 
 
 class TranscriptionHandler(BaseHandler[TranscriptionInput, TranscriptionOutput]):

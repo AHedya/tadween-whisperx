@@ -40,6 +40,16 @@ def set_s3(
     keep_downloaded: bool = typer.Option(
         False, help="Keep downloaded files after processing."
     ),
+    max_retries: int | None = typer.Option(None, help="Maximum S3 download retries."),
+    multipart_threshold_mb: int | None = typer.Option(
+        None, help="Multipart download threshold in MB."
+    ),
+    max_workers: int | None = typer.Option(
+        None, help="Maximum workers for S3 downloads."
+    ),
+    max_concurrency_per_file: int | None = typer.Option(
+        None, help="Maximum concurrency per file for S3 downloads."
+    ),
 ):
     """Set input source to an S3 bucket."""
     config = load_config()
@@ -52,7 +62,12 @@ def set_s3(
         "aws_session_token": session_token,
         "region_name": region,
         "keep_downloaded": keep_downloaded,
+        "max_retries": max_retries,
+        "multipart_threshold_mb": multipart_threshold_mb,
+        "max_workers": max_workers,
+        "max_concurrency_per_file": max_concurrency_per_file,
     }
+    s3_kwargs = {k: v for k, v in s3_kwargs.items() if v is not None}
     if download_path is not None:
         s3_kwargs["download_path"] = download_path
     config.input = S3InputConfig(**s3_kwargs)

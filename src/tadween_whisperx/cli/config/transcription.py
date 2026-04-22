@@ -14,6 +14,8 @@ def transcription_cmd(
         None, "--compute-type", help="Compute type (e.g., float16)"
     ),
     batch_size: int | None = typer.Option(None, "--batch-size", help="Batch size"),
+    language: str | None = typer.Option(None, "--language", help="Language code"),
+    threads: int | None = typer.Option(None, "--threads", help="Number of threads"),
 ) -> None:
     """Configure transcription settings."""
     updates = {
@@ -22,6 +24,8 @@ def transcription_cmd(
         "device": device,
         "compute_type": compute_type,
         "batch_size": batch_size,
+        "language": language,
+        "threads": threads,
     }
     updates = {k: v for k, v in updates.items() if v is not None}
 
