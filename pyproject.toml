@@ -1,0 +1,78 @@
+[project]
+name = "tadween-whisperx"
+version = "0.1.0"
+description = "Configurable ASR pipeline built on tadween-core, wrapping whisperx for transcription, diarization, and alignment"
+readme = "README.md"
+authors = [{ name = "Abdulrahman Hedya", email = "abdohedya19@gmail.com" }]
+requires-python = ">=3.11"
+dependencies = [
+    "whisperx>=3.8.4",
+    "tadween-core[s3]",
+    "torchcodec==0.6.0",
+    "torch==2.8.0+cu128",
+    "torchaudio==2.8.0+cu128",
+    "pympler>=1.1",
+    "pydantic-settings>=2.13.1",
+    "typer>=0.24.1",
+    "pyyaml>=6.0.3",
+    "platformdirs>=4.9.4",
+    "rich>=13.0.0",
+]
+
+
+[tool.uv.sources]
+tadween-core = { path = "../../core", editable = true }
+torchcodec = { index = "pytorch-cu128" }
+torch = { index = "pytorch-cu128" }
+torchaudio = { index = "pytorch-cu128" }
+
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[build-system]
+requires = ["uv_build>=0.9.5,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["ipykernel<7.0.0", "ipywidgets>=8.1.8"]
+test = ["pytest>=8.0.0", "pytest-cov>=6.0.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["src"]
+
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "UP",     # pyupgrade 
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "W",      # pycodestyle warnings
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "ARG001", # unused arguments in functions
+    "F401",   # unused imports
+]
+ignore = [
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "W191", # indentation contains tabs
+    "B904", # Allow raising exceptions without from e, for HTTPException
+]
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
+
+[project.scripts]
+tadween-whisperx = "tadween_whisperx.cli:app"
+tadweenx = "tadween_whisperx.cli:app"

@@ -1,0 +1,80 @@
+# Illustrative examlpe
+# input:
+#   type: local
+#   paths: []
+
+# input:
+#   type: s3
+#   bucket: "stash-bucket"
+#   prefix: "small_temp"
+#   aws_access_key_id: rustfsadmin
+#   aws_secret_access_key: rustfsadmin
+#   endpoint_url: http://localhost:9000
+#   # ------------------------
+#   max_retries: 3
+#   multipart_threshold_mb: 4
+#   max_workers: 4
+#   max_concurrency_per_file: 2
+#   task_queue:
+#     executor: thread
+#     max_workers: 1
+#     name: s3_input
+
+repo:
+  active: null
+  profiles: {}
+
+loader:
+  type: torchcodec
+  max_stashed_files: 2
+  task_queue:
+    executor: thread
+    max_workers: 2
+    name: "loader_queue"
+
+diarization:
+  enabled: false
+  model_name: "pyannote/speaker-diarization-community-1"
+  device: "cuda"
+  token: null
+  cache_dir: null
+  task_queue:
+    executor: thread
+    max_workers: 1
+    name: "diarization_queue"
+
+transcription:
+  enabled: true
+  model: "large-v3"
+  device: "cuda"
+  compute_type: "float16"
+  language: null
+  task_queue:
+    executor: thread
+    max_workers: 1
+    name: "transcription_queue"
+
+alignment:
+  enabled: false
+  language_code: null # relise on transcription auto-detection if language is null on trancription config
+  device: "cuda"
+  model_name: null
+  model_dir: null
+  model_cache_only: false
+  task_queue:
+    executor: thread
+    max_workers: 1
+    name: "alignment_queue"
+
+normalizer:
+  enabled: false
+  allowed_chars: 3
+  max_word_len: 16
+  allowed_words: 3
+  task_queue:
+    executor: process
+    max_workers: 2
+    name: "normalizer_queue"
+
+log_path: null
+log_level: WARNING

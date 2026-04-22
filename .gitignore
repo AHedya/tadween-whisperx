@@ -1,0 +1,27 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+/data
+/models
+
+# notebooks in the root dir
+/*.ipynb
+
+/.pytest_cache
+/.nox
+/.ruff_cache
+
+repo/
+json-repo/
+fs-repo/
+
+*.log
+downloaded/
