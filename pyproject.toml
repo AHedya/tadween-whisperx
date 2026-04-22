@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Configurable ASR pipeline built on tadween-core, wrapping whisperx for transcription, diarization, and alignment"
 readme = "README.md"
 authors = [{ name = "Abdulrahman Hedya", email = "abdohedya19@gmail.com" }]
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
     "whisperx>=3.8.4",
     "tadween-core[s3]",
