@@ -18,7 +18,7 @@ Enhancement and priority guide for `tadween-whisperx`.
 - [ ] **Graceful Shutdown**: Ensure `wf.close()` and `scanner.close()` handle interrupts (Ctrl+C) cleanly, releasing GPU memory and deleting temp files.
 
 ## DX & Features
-- [ ] **Scanner RE**: Add matching patterns for exclusion or strict include for scanners.
+- [x] **Scanner pattern**: Add matching patterns for exclusion or strict include for scanners.
 - [ ] **Documentation**: Document the "Handler/Policy/Schema" pattern and the stashing mechanism in a new `docs/` folder or updated `README.md`.
 - [ ] **Lazy load**
 - [ ] **Multiple Repo Support**: Enhance the CLI to easily switch between different S3/Local repo profiles.
