@@ -1,7 +1,7 @@
 import rich
 import typer
 
-from ...config import load_config, save_config
+from ...config import get_config, save_config
 
 
 def transcription_cmd(
@@ -33,7 +33,7 @@ def transcription_cmd(
         rich.print("No changes provided.")
         return
 
-    config = load_config()
+    config = get_config()
     config.transcription = config.transcription.model_copy(update=updates)
     save_config(config)
     rich.print("[green]Transcription configuration updated.[/green]")

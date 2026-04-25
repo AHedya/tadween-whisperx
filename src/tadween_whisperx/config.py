@@ -1,14 +1,16 @@
+from __future__ import annotations
+
 import copy
 import logging
 import shutil
 import tempfile
 from importlib.resources import files
 from pathlib import Path
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal
 
 import platformdirs
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings
 from tadween_core.types.s3_config import S3ClientConfig
 
@@ -19,6 +21,9 @@ from tadween_whisperx.components.diarization.handler import (
     ModelConfig as DiarizationModelConfig,
 )
 from tadween_whisperx.components.transcription.handler import TranscriptionModelConfig
+
+_GLOBAL_CONFIG: AppConfig | None = None
+
 
 APP_NAME = "tadween-whisperx"
 CONFIG_NAME = "config.yaml"
@@ -36,17 +41,18 @@ class ConfigError(Exception):
 
 class FSRepoConfig(BaseModel):
     type: Literal["fs"] = "fs"
-    path: Path = Field(default_factory=lambda: Path.cwd() / "repo")
+    path: Path | None = Field(default_factory=lambda: Path.cwd() / "tadweenx-fs-repo")
 
     @field_validator("path", mode="after")
     @classmethod
-    def ensure_path_exists(cls, v: Path) -> Path:
-        v.mkdir(parents=True, exist_ok=True)
-        return v
+    def ensure_path_exists(cls, v: Path | None) -> Path:
+        pth = v or Path.cwd() / f"tadweenx-{cls.model_fields['type'].default}-repo"
+        return pth
 
 
 class JsonRepoConfig(FSRepoConfig):
     type: Literal["json"] = "json"
+    path: Path | None = Field(default_factory=lambda: Path.cwd() / "tadweenx-json-repo")
 
 
 class S3RepoConfig(BaseModel):
@@ -192,12 +198,13 @@ class AppConfig(BaseSettings):
     alignment: AlignmentConfig = Field(default_factory=AlignmentConfig)
     normalizer: NormalizerConfig = Field(default_factory=NormalizerConfig)
 
-    log_level: str = "WARNING"
+    log_level: str = "INFO"
     log_path: Path | None = None
 
-    @model_validator(mode="after")
-    def check_components_dependency(self) -> Self:
+    core_log_level: str = "INFO"
+    core_log_path: Path | None = None
 
+    def validate(self):
         if not self.diarization.enabled and not self.transcription.enabled:
             raise ConfigError(
                 "Can't build an ASR pipeline without diarization nor transcription. Enable at least one."
@@ -215,6 +222,18 @@ class AppConfig(BaseSettings):
                     "or disable normalization "
                 )
         return self
+
+
+def get_config() -> AppConfig:
+    global _GLOBAL_CONFIG
+    if _GLOBAL_CONFIG is None:
+        _GLOBAL_CONFIG = load_config()
+    return _GLOBAL_CONFIG
+
+
+def set_config(config: AppConfig) -> None:
+    global _GLOBAL_CONFIG
+    _GLOBAL_CONFIG = config
 
 
 def load_default_config() -> dict:
@@ -246,11 +265,13 @@ def load_config() -> AppConfig:
 
 
 def save_config(config: AppConfig) -> Path:
+    global _GLOBAL_CONFIG
     USER_CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     data = config.model_dump(mode="json")
     with USER_CONFIG_FILE.open("w", encoding="utf-8") as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
     logger.info(f"Saved config to {USER_CONFIG_FILE}")
+    _GLOBAL_CONFIG = None
     return USER_CONFIG_FILE
 
 
@@ -259,9 +280,10 @@ def config_exists() -> bool:
 
 
 def reset_config() -> Path:
-
+    global _GLOBAL_CONFIG
     USER_CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(DEFAULT_CONFIG_FILE, USER_CONFIG_FILE)
+    _GLOBAL_CONFIG = None
     return USER_CONFIG_FILE
 
 

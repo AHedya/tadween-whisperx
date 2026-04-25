@@ -20,8 +20,10 @@ def tmp_config_dir(tmp_path: Path):
 
     original = config_module.USER_CONFIG_FILE
     config_module.USER_CONFIG_FILE = config_file
+    config_module._GLOBAL_CONFIG = None  # Clear global config
     yield config_file
     config_module.USER_CONFIG_FILE = original
+    config_module._GLOBAL_CONFIG = None  # Clear global config again
 
 
 @pytest.fixture(scope="session")

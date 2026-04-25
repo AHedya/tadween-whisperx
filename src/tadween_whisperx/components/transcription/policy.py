@@ -21,21 +21,14 @@ class TranscriptionPolicy(
         TranscriptionInput, TranscriptionOutput, CacheSchema, Artifact, PART_NAMES
     ]
 ):
-    # def intercept(self, message, broker=None, repo=None, cache=None):
-    #     id = message.metadata.get("artifact_id")
-    #     if repo.has_parts(id).get("transcription"):
-    #         return InterceptionContext(
-    #             True,
-    #             action=InterceptionAction(on_success=False),
-    #             reason="SKIP. Already processed",
-    #         )
-
     @inject_cache("audio_array", "audio")
     def resolve_inputs(self, message, repo=None, cache=None, **kwargs):
         return TranscriptionInput(audio=kwargs["audio"])
 
     @write_cache("transcription", None)  # None means the whole result.
     def on_success(self, task_id, message, result, broker=None, repo=None, cache=None):
+        if repo is None:
+            return
         id = message.metadata.get("artifact_id")
         cache_key = message.metadata.get("cache_key")
         art = repo.load(id, None)

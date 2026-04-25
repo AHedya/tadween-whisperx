@@ -1,7 +1,7 @@
 import rich
 import typer
 
-from ...config import load_config, save_config
+from ...config import get_config, save_config
 
 
 def diarization_cmd(
@@ -27,7 +27,7 @@ def diarization_cmd(
         rich.print("No changes provided.")
         return
 
-    config = load_config()
+    config = get_config()
     config.diarization = config.diarization.model_copy(update=updates)
     save_config(config)
     rich.print("[green]Diarization configuration updated.[/green]")

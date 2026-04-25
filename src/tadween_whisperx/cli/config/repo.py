@@ -6,7 +6,7 @@ import typer
 from ...config import (
     JsonRepoConfig,
     S3RepoConfig,
-    load_config,
+    get_config,
     save_config,
 )
 
@@ -27,7 +27,7 @@ def json_repo(
     profile_name = name or "json"
     repo_path = path or Path.cwd() / "repo"
 
-    config = load_config()
+    config = get_config()
 
     if profile_name in config.repo.profiles and not force:
         rich.print(
@@ -72,7 +72,7 @@ def s3_repo(
     """Create or update an S3 repo profile."""
     profile_name = name or "s3"
 
-    config = load_config()
+    config = get_config()
 
     if profile_name in config.repo.profiles and not force:
         rich.print(
@@ -106,7 +106,7 @@ def s3_repo(
 @repo_app.command("list")
 def list_profiles() -> None:
     """List all repo profiles."""
-    config = load_config()
+    config = get_config()
 
     if not config.repo.profiles:
         rich.print("[dim]No repo profiles configured.[/dim]")
@@ -135,7 +135,7 @@ def switch_profile(
     name: str = typer.Argument(..., help="Profile name to activate"),
 ) -> None:
     """Switch the active repo profile."""
-    config = load_config()
+    config = get_config()
 
     if name not in config.repo.profiles:
         available = ", ".join(config.repo.profiles) or "(none)"
@@ -155,7 +155,7 @@ def remove_profile(
     name: str = typer.Argument(..., help="Profile name to remove"),
 ) -> None:
     """Remove a repo profile."""
-    config = load_config()
+    config = get_config()
 
     if name not in config.repo.profiles:
         available = ", ".join(config.repo.profiles) or "(none)"

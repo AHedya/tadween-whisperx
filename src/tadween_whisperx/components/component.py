@@ -87,7 +87,7 @@ class DownloaderComponent(WorkflowComponent):
             self.name,
             handler=S3DownloadHandler(
                 config.input.download_path,
-                access_key=config.input.aws_secret_access_key,
+                access_key=config.input.aws_access_key_id,
                 secret_key=config.input.aws_secret_access_key,
                 endpoint_url=config.input.endpoint_url,
                 session_token=config.input.aws_session_token,
@@ -106,7 +106,7 @@ class AudioLoaderComponent(WorkflowComponent):
 
     def is_enabled(self, config: AppConfig) -> bool:
         # Audio loader is always needed if we have any ASR task
-        return config.diarization.enabled or config.transcription.enabled
+        return True
 
     def add_to_workflow(
         self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext

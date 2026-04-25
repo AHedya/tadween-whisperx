@@ -10,28 +10,36 @@ from tadween_core.cache.base import BaseCache
 from tadween_core.coord import WorkflowContext
 from tadween_core.types.artifact.base import BaseArtifact, RootModel
 
-from tadween_whisperx.config import load_config
+from tadween_whisperx.config import get_config
 
 from .alignment.schema import AlignmentPart
 from .diarization.schema import DiarizationPart
 from .normalizer.schema import NormalizationPart
 from .transcription.schema import TranscriptionPart
 
-config = load_config()
-AUDIO_STAGES = {
-    "drz": config.diarization.enabled,
-    "trn": config.transcription.enabled,
-    "alg": config.alignment.enabled,
-}
-AUDIO_TERMINALS = {k: v for k, v in AUDIO_STAGES.items() if v}
-NUM_REQUIRING_AUDIO_ARRAY = sum(AUDIO_TERMINALS.values())
-MAX_STASH_DEPTH = config.loader.max_stashed_files
 STASH_EVENT = "stash_limit"
+NUM_REQUIRING_AUDIO: int | None = None
+
+
+def get_num_requiring_audio() -> int:
+    global NUM_REQUIRING_AUDIO
+    if NUM_REQUIRING_AUDIO is not None:
+        return NUM_REQUIRING_AUDIO
+
+    config = get_config()
+    stages = [
+        config.diarization.enabled,
+        config.transcription.enabled,
+        config.alignment.enabled,
+    ]
+    NUM_REQUIRING_AUDIO = sum(stages)
+    return NUM_REQUIRING_AUDIO
 
 
 def stash_predicate(ctx: WorkflowContext, _meta: dict) -> bool:
     """Blocks if the number of active files in the pipeline exceeds MAX_STASH_DEPTH."""
-    return ctx.state_get("active_stash", 0) >= MAX_STASH_DEPTH
+    config = get_config()
+    return ctx.state_get("active_stash", 0) >= config.loader.max_stashed_files
 
 
 def claim_stash(ctx: WorkflowContext, meta: dict):
@@ -39,6 +47,7 @@ def claim_stash(ctx: WorkflowContext, meta: dict):
     Claims a stash slot and initializes reference counting for the specific artifact.
     Reference count is based on the number of parallel branches (Diarization & Transcription).
     """
+    config = get_config()
     artifact_id = meta.get("artifact_id")
     ctx.increment("active_stash")
 
@@ -125,8 +134,11 @@ PART_NAMES = Literal["diarization", "transcription", "alignment", "normalization
 def free_audio_cache(
     cache: BaseCache[CacheSchema],
     cache_key: str,
-    touches: int = NUM_REQUIRING_AUDIO_ARRAY,
+    touches: int | None = None,
 ):
+    if touches is None:
+        touches = get_num_requiring_audio()
+
     logger = logging.getLogger("tadween.cache")
     with cache.lock:
         if bkt := cache.get_bucket(cache_key):
@@ -137,4 +149,4 @@ def free_audio_cache(
                     "FREEING cache "
                     f"`{cache_key}.audio_array` [{bkt.audio_array_touch_counter}]"
                 )
-                # gc.collect()
+                gc.collect()

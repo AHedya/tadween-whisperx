@@ -20,8 +20,7 @@ wheels/
 /.ruff_cache
 
 repo/
-json-repo/
-fs-repo/
+*-repo
 
 *.log
 downloaded/

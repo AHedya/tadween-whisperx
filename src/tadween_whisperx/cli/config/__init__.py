@@ -8,7 +8,7 @@ import tadween_whisperx.config as config_module
 
 from ...config import (
     config_exists,
-    load_config,
+    get_config,
     redact_secrets,
     reset_config,
 )
@@ -17,7 +17,7 @@ from .diarization import diarization_cmd
 from .input import app as input_app
 from .loader import loader_cmd
 from .normalizer import normalizer_cmd
-from .repo import repo_app  # noqa: E402
+from .repo import repo_app
 from .transcription import transcription_cmd
 
 
@@ -93,9 +93,6 @@ def reset() -> None:
 
 @Config.command()
 def show(
-    component: list[ConfigComponent] = typer.Option(
-        None, "--component", "-c", help="Specific component(s) to show"
-    ),
     components: list[ConfigComponent] = typer.Argument(
         None, help="Additional component(s) to show"
     ),
@@ -104,15 +101,26 @@ def show(
     ),
 ) -> None:
     """Display current configuration."""
-    config = load_config()
+    config = get_config()
     data = config.model_dump(mode="json")
 
-    all_requested = (component or []) + (components or [])
+    all_requested = components or []
+
     if all_requested:
-        # Deduplicate names (handling shortcuts) while preserving order
         unique_names = list(dict.fromkeys(c.full_name for c in all_requested))
         data = {name: data[name] for name in unique_names}
 
     if not reveal:
         data = redact_secrets(data)
     rich.print(yaml.dump(data, default_flow_style=False, sort_keys=False))
+
+    # valid feedback
+    rich.print("\nConfig state: ", end="")
+
+    try:
+        msg = "[green]Valid[/green]"
+        config.validate()
+    except Exception as e:
+        msg = f"[bold red]Invalid[/bold red]. Error: {e}"
+
+    rich.print(msg)

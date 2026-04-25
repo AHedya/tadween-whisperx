@@ -53,6 +53,8 @@ class AlignmentPolicy(
         )
 
     def on_success(self, task_id, message, result, broker=None, repo=None, cache=None):
+        if repo is None:
+            return
         id = message.metadata.get("artifact_id")
         cache_key = message.metadata.get("cache_key")
         art = repo.load(id, None)

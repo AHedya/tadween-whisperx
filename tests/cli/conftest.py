@@ -11,12 +11,14 @@ def _patch_user_config(tmp_path):
     config_file = tmp_path / "config.yaml"
     original = config_module.USER_CONFIG_FILE
     config_module.USER_CONFIG_FILE = config_file
+    config_module._GLOBAL_CONFIG = None  # Clear global config
     return config_file, original
 
 
 def _restore_user_config(original):
     """Restore USER_CONFIG_FILE to its original value."""
     config_module.USER_CONFIG_FILE = original
+    config_module._GLOBAL_CONFIG = None  # Clear global config
 
 
 @pytest.fixture

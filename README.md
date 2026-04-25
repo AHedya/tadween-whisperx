@@ -35,16 +35,24 @@ tadween-whisperx config reset             # reset to defaults
 tadween-whisperx config repo json         # add a local JSON repo profile
 tadween-whisperx config repo s3           # add an S3 repo profile
 tadween-whisperx config repo list         # list profiles
-tadween-whisperx config repo switch NAME  # switch active profile
-tadween-whisperx config repo remove NAME  # remove a profile
+tadween-whisperx config repo switch {NAME}  # switch active profile
+tadween-whisperx config repo remove {NAME}  # remove a profile
 
 tadween-whisperx config diarization       # configure diarization
 tadween-whisperx config transcription     # configure transcription
 tadween-whisperx config alignment         # configure alignment
 tadween-whisperx config normalizer        # configure normalizer
+
+# `tadweenx` is an alias to tadween-whisperx
+tadweenx scan                           # uses config `input` section and print scan result
+tadweenx scan local PATH_1 PATH_2 ...   # print scan result of given local input
+tadweenx scan s3 ...                    # print scan result of s3 input
 ```
 
-Config is loaded from `~/.config/tadween-whisperx/config.yaml`, falling back to bundled defaults. Supports local filesystem (`json`) and S3 (`s3`) repository profiles.
+Config is loaded from `~/.config/tadween-whisperx/config.yaml`, falling back to bundled defaults. <br>
+
+Task queue configuration is handled from `config.yaml` file.
+
 
 ### Validation rules
 

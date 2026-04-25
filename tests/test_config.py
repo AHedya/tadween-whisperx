@@ -21,14 +21,7 @@ from tadween_whisperx.config import (
 class TestJsonRepoConfig:
     def test_default_path_is_cwd_repo(self):
         config = JsonRepoConfig()
-        assert config.path == Path.cwd() / "repo"
-
-    def test_path_created_on_validate(self, tmp_path: Path):
-        repo_path = tmp_path / "custom" / "repo"
-        assert not repo_path.exists()
-        config = JsonRepoConfig(path=repo_path)
-        assert config.path == repo_path
-        assert repo_path.exists()
+        assert Path.cwd() == config.path.parent
 
     def test_type_literal(self):
         config = JsonRepoConfig()
@@ -237,8 +230,7 @@ class TestWhisperXConfig:
 class TestLoadConfig:
     def test_load_fallback_to_default(self, tmp_config_dir):
         config = load_config()
-        assert config.repo.active is None
-        assert config.repo.profiles == {}
+        assert config.repo.active == "default"
 
     def test_load_from_user_file(self, tmp_config_dir):
         from tadween_whisperx.config import save_config
@@ -257,7 +249,7 @@ class TestLoadConfig:
     def test_load_corrupt_user_falls_back(self, tmp_config_dir):
         tmp_config_dir.write_text("::invalid yaml:::{{", encoding="utf-8")
         config = load_config()
-        assert config.repo.active is None
+        assert config.repo.active == "default"
 
 
 class TestSaveConfig:
@@ -301,11 +293,11 @@ class TestResetConfig:
         import yaml
 
         content = yaml.safe_load(tmp_config_dir.read_text(encoding="utf-8"))
-        assert content["repo"]["active"] is None
+        assert content["repo"]["active"] == "default"
 
         reset_config()
         content2 = yaml.safe_load(tmp_config_dir.read_text(encoding="utf-8"))
-        assert content2["repo"]["active"] is None
+        assert content2["repo"]["active"] == "default"
 
 
 class TestRedactSecrets:

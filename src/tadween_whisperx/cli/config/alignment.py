@@ -1,7 +1,7 @@
 import rich
 import typer
 
-from ...config import load_config, save_config
+from ...config import get_config, save_config
 
 
 def alignment_cmd(
@@ -37,7 +37,7 @@ def alignment_cmd(
         rich.print("No changes provided.")
         return
 
-    config = load_config()
+    config = get_config()
     config.alignment = config.alignment.model_copy(update=updates)
     save_config(config)
     rich.print("[green]Alignment configuration updated.[/green]")

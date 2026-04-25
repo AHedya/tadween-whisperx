@@ -1,0 +1,58 @@
+import typer
+from rich.console import Console
+
+from tadween_whisperx import scanners
+from tadween_whisperx.config import AppConfig, get_config
+
+from ..shared import add_input_commands
+
+app = typer.Typer(help="Scan input for compatible files.")
+console = Console()
+
+
+def _execute_scan(config: AppConfig) -> None:
+    """Internal helper to scan the input from a resolved config."""
+    if config.input is None:
+        console.print(
+            "[bold red]Error:[/bold red] No input source provided. "
+            "Set input in config or use a subcommand (local/s3)."
+        )
+        raise typer.Exit(code=1)
+
+    scanner = scanners.create_scanner(config.input)
+
+    console.print("[bold blue]Scanning Input[/bold blue]")
+    console.print(f"Input type: [green]{config.input.type}[/green]")
+
+    try:
+        count = 0
+        for result in scanner.scan():
+            console.print(
+                f"Found: [cyan]{result.file_path}[/cyan] "
+                f"(Artifact ID: [magenta]{result.artifact_id}[/magenta])"
+            )
+            count += 1
+
+        if count == 0:
+            console.print("[yellow]No files found.[/yellow]")
+        else:
+            console.print(f"\n[bold green]Total files found: {count}[/bold green]")
+
+    finally:
+        scanner.close()
+
+
+@app.callback(invoke_without_command=True)
+def scan(ctx: typer.Context) -> None:
+    """Scan for compatible files using the default configuration."""
+    if ctx.invoked_subcommand is None:
+        config = get_config()
+        _execute_scan(config)
+
+
+add_input_commands(
+    app,
+    action=_execute_scan,
+    local_help="Scan local files/directories.",
+    s3_help="Scan S3 objects.",
+)

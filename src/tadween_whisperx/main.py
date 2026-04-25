@@ -6,7 +6,7 @@ import warnings
 
 from tadween_whisperx._logging import set_logger
 from tadween_whisperx.builder import WorkflowBuilder
-from tadween_whisperx.config import load_config
+from tadween_whisperx.config import get_config
 
 warnings.filterwarnings("ignore")
 
@@ -18,7 +18,7 @@ logger = logging.getLogger("tadween_whisperx")
 def main():
     for i in DISABLED_LOGGERS:
         logging.getLogger(i).setLevel(logging.CRITICAL)
-    config = load_config()
+    config = get_config()
 
     set_logger(
         level=config.log_level,

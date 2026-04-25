@@ -1,8 +1,9 @@
-import rich
-import typer
 from typing import Literal
 
-from ...config import load_config, save_config
+import rich
+import typer
+
+from ...config import get_config, save_config
 
 
 def loader_cmd(
@@ -24,7 +25,7 @@ def loader_cmd(
         rich.print("No changes provided.")
         return
 
-    config = load_config()
+    config = get_config()
     config.loader = config.loader.model_copy(update=updates)
     save_config(config)
     rich.print("[green]Loader configuration updated.[/green]")

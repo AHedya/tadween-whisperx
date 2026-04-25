@@ -1,7 +1,5 @@
 import logging
-import os
 from collections import OrderedDict
-from pathlib import Path
 
 from tadween_core.broker.memory import InMemoryBroker
 from tadween_core.cache import SimpleCache
@@ -64,7 +62,7 @@ class WorkflowBuilder:
             if parent_name in active_nodes:
                 active_deps.append(parent_name)
             else:
-                # If parent is disabled, inherit the parent's dependencies!
+                # If parent is disabled, inherit the parent's dependencies
                 self.logger.debug(
                     f"Component '{parent_name}' is disabled. Inheriting its dependencies for '{target_name}'."
                 )
@@ -74,10 +72,10 @@ class WorkflowBuilder:
         return active_deps
 
     def build(self) -> Workflow:
+        self.config.validate()
         wf = None
         try:
             self.logger.info("Building workflow...")
-            # Broker & Cache
             broker = InMemoryBroker()
             cache = SimpleCache(CacheSchema)
             repo = self._get_repo(self.config.repo)
@@ -121,7 +119,7 @@ class WorkflowBuilder:
         except Exception as e:
             self.logger.error(f"Failed to build workflow: {e}")
             if wf is not None:
-                self.logger.info("Closing partially built workflow resources...")
+                self.logger.info("Closing partially-built workflow resources...")
                 wf.close()
             raise e
 
@@ -145,12 +143,10 @@ class WorkflowBuilder:
             else:
                 raise ConfigError(f"Unsupported repo type: {type(active)}")
         except ConfigError as e:
-            pth = Path(os.getcwd()) / "json-repo"
-            pth.mkdir(exist_ok=True)
-            repo = FsJsonRepo(pth, Artifact)
             self.logger.warning(
-                f"Error initializing repo from config. Falling back default json repo at [{pth}]. Error: {e}."
+                f"Failed initializing repo from config. Error: {e}. "
+                "No results will be saved"
             )
-            return repo
+            return None
         except Exception as e:
             raise e

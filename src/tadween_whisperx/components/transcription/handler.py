@@ -1,13 +1,10 @@
 import logging
-import os
 
 from pydantic import BaseModel
 from tadween_core.handler import BaseHandler
 from whisperx import load_model
 
 from .schema import TranscriptionInput, TranscriptionOutput
-
-os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "true"
 
 logger = logging.getLogger("tadween_whisperx")
 

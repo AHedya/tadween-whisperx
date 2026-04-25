@@ -46,8 +46,7 @@ class TestConfigReset:
         result = runner.invoke(app, ["config", "reset"])
         assert result.exit_code == 0
         config = load_config()
-        assert config.repo.active is None
-        assert config.repo.profiles == {}
+        assert config.repo.active == "default"
 
 
 class TestConfigShow:
@@ -55,7 +54,7 @@ class TestConfigShow:
         runner.invoke(app, ["config", "init"])
         result = runner.invoke(app, ["config", "show"])
         assert result.exit_code == 0
-        parsed = yaml.safe_load(result.output)
+        parsed = yaml.safe_load(result.output.split("Config state")[0])
         assert "repo" in parsed
 
     def test_show_redacts_secrets(self, runner: CliRunner, isolated_config):
@@ -103,18 +102,20 @@ class TestConfigShow:
         self, runner: CliRunner, isolated_config
     ):
         runner.invoke(app, ["config", "init"])
-        result = runner.invoke(app, ["config", "show", "--component", "transcription"])
+        result = runner.invoke(app, ["config", "show", "transcription"])
         assert result.exit_code == 0
-        parsed = yaml.safe_load(result.output)
+        parsed = yaml.safe_load(result.output.split("Config state")[0])
+
         assert "transcription" in parsed
         assert "repo" not in parsed
         assert "diarization" not in parsed
 
     def test_show_component_shortcuts(self, runner: CliRunner, isolated_config):
         runner.invoke(app, ["config", "init"])
-        result = runner.invoke(app, ["config", "show", "-c", "tr"])
+        result = runner.invoke(app, ["config", "show", "tr"])
         assert result.exit_code == 0
-        parsed = yaml.safe_load(result.output)
+        parsed = yaml.safe_load(result.output.split("Config state")[0])
+
         assert "transcription" in parsed
         assert "repo" not in parsed
 
@@ -123,9 +124,10 @@ class TestConfigShow:
     ):
         runner.invoke(app, ["config", "init"])
         # Mix of -c flag, shortcuts, and positional arguments with duplicates
-        result = runner.invoke(app, ["config", "show", "-c", "repo", "di", "re"])
+        result = runner.invoke(app, ["config", "show", "repo", "di", "re"])
         assert result.exit_code == 0
-        parsed = yaml.safe_load(result.output)
+        parsed = yaml.safe_load(result.output.split("Config state")[0])
+
         assert "repo" in parsed
         assert "diarization" in parsed
         assert len(parsed) == 2  # repo and diarization only
@@ -133,17 +135,18 @@ class TestConfigShow:
     def test_show_multiple_components(self, runner: CliRunner, isolated_config):
         runner.invoke(app, ["config", "init"])
         result = runner.invoke(
-            app, ["config", "show", "-c", "transcription", "-c", "alignment"]
+            app, ["config", "show", "transcription", "alignment", "transcription"]
         )
         assert result.exit_code == 0
-        parsed = yaml.safe_load(result.output)
+        parsed = yaml.safe_load(result.output.split("Config state")[0])
+
         assert "transcription" in parsed
         assert "alignment" in parsed
         assert "repo" not in parsed
 
     def test_show_invalid_component(self, runner: CliRunner, isolated_config):
         runner.invoke(app, ["config", "init"])
-        result = runner.invoke(app, ["config", "show", "-c", "invalid_component"])
+        result = runner.invoke(app, ["config", "show", "invalid_component"])
         assert result.exit_code != 0
         assert "Invalid value" in result.output
 
@@ -403,12 +406,6 @@ class TestRepoS3:
 
 
 class TestRepoList:
-    def test_list_empty(self, runner: CliRunner, isolated_config):
-        runner.invoke(app, ["config", "init"])
-        result = runner.invoke(app, ["config", "repo", "list"])
-        assert result.exit_code == 0
-        assert "No repo profiles configured" in result.output
-
     def test_list_shows_profiles(
         self, runner: CliRunner, isolated_config, tmp_path: Path
     ):
@@ -550,7 +547,7 @@ class TestEndToEnd:
     def test_full_workflow(self, runner: CliRunner, isolated_config, tmp_path: Path):
         runner.invoke(app, ["config", "init"])
         config = load_config()
-        assert config.repo.active is None
+        assert config.repo.active == "default"
 
         runner.invoke(
             app,
@@ -597,5 +594,4 @@ class TestEndToEnd:
 
         runner.invoke(app, ["config", "reset"])
         config = load_config()
-        assert config.repo.active is None
-        assert config.repo.profiles == {}
+        assert config.repo.active == "default"

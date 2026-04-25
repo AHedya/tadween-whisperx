@@ -1,8 +1,8 @@
-# Illustrative examlpe
-# input:
-#   type: local
-#   paths: []
+input:
+  type: local
+  paths: []
 
+# Illustrative s3 examlpe
 # input:
 #   type: s3
 #   bucket: "stash-bucket"
@@ -21,9 +21,11 @@
 #     name: s3_input
 
 repo:
-  active: null
-  profiles: {}
-
+  active: default
+  profiles:
+    default:
+      type: json
+      path: null # let app defaults it by using cwd.
 loader:
   type: torchcodec
   max_stashed_files: 2
@@ -48,6 +50,7 @@ transcription:
   model: "large-v3"
   device: "cuda"
   compute_type: "float16"
+  threads: 4
   language: null
   task_queue:
     executor: thread
@@ -77,4 +80,7 @@ normalizer:
     name: "normalizer_queue"
 
 log_path: null
-log_level: WARNING
+log_level: INFO
+
+core_log_level: INFO
+core_log_path: null

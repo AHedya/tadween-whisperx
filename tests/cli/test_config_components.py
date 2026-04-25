@@ -58,7 +58,8 @@ class TestConfigTranscription:
         assert result.exit_code == 0
         # disabling transcription leads to no active nodes.
         with pytest.raises(ConfigError):
-            config = load_config()  # noqa: F841
+            config = load_config()
+            config.validate()
 
     def test_update_fields(self, runner: CliRunner, isolated_config):
         runner.invoke(app, ["config", "init"])

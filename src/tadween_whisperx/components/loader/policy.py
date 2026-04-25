@@ -70,6 +70,8 @@ class LoaderPolicy(
 
     @decorators.write_cache("audio_array", result_field="audio_array")
     def on_success(self, task_id, message, result, broker=None, repo=None, cache=None):
+        if repo is None:
+            return
         id = message.metadata.get("artifact_id")
         # initialize the artifact
         if not repo.exists(id):
