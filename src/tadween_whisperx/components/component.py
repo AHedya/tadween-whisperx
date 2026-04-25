@@ -11,13 +11,6 @@ from tadween_whisperx.components.alignment.handler import (
 )
 from tadween_whisperx.components.alignment.handler import AlignmentHandler
 from tadween_whisperx.components.alignment.policy import AlignmentPolicy
-from tadween_whisperx.components.artifact import (
-    STASH_EVENT,
-    claim_stash,
-    release_stash,
-    rollback_stash,
-    stash_predicate,
-)
 from tadween_whisperx.components.diarization.handler import DiarizationHandler
 from tadween_whisperx.components.diarization.handler import (
     ModelConfig as DiarizationModelConfig,  # noqa
@@ -31,24 +24,19 @@ from tadween_whisperx.components.loader.handler import (
 from tadween_whisperx.components.loader.policy import LoaderPolicy, S3Policy
 from tadween_whisperx.components.normalizer.handler import NormalizeHandler
 from tadween_whisperx.components.normalizer.policy import NormalizerPolicy
+from tadween_whisperx.components.throttle import (
+    STASH_EVENT,
+    claim_stash,
+    release_stash,
+    rollback_stash,
+    stash_predicate,
+)
 from tadween_whisperx.components.transcription.handler import (
     TranscriptionHandler,
     TranscriptionModelConfig,
 )
 from tadween_whisperx.components.transcription.policy import TranscriptionPolicy
 from tadween_whisperx.config import AppConfig
-
-
-def is_terminal_audio(component_name: str, config: AppConfig) -> bool:
-    """Returns True if the component is the last one needing audio in its branch."""
-    if component_name == "diarization":
-        return True
-    if component_name == "transcription":
-        # Terminal if no alignment follows
-        return not config.alignment.enabled
-    if component_name == "alignment":
-        return True
-    return False
 
 
 class WorkflowComponent(ABC):
@@ -182,9 +170,7 @@ class TranscriptionComponent(WorkflowComponent):
             demands={"cuda": 1},
             context_config=StageContextConfig(
                 context=wf_context,
-                done_state_update=release_stash
-                if is_terminal_audio(self.name, config)
-                else None,
+                done_state_update=release_stash,
                 notify_events=[STASH_EVENT],
             ),
         )

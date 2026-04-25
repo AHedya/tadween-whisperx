@@ -21,6 +21,7 @@ from tadween_whisperx.components.component import (
     TranscriptionComponent,
     WorkflowComponent,
 )
+from tadween_whisperx.components.throttle import get_workflow_resources
 from tadween_whisperx.config import (
     AppConfig,
     ConfigError,
@@ -85,9 +86,7 @@ class WorkflowBuilder:
                 cache=cache,
                 repo=repo,
                 context=wf_context,
-                resources={
-                    "cuda": 1,
-                },
+                resources=get_workflow_resources(),
             )
 
             active_nodes: set[COMPONENTS_NAME] = set()

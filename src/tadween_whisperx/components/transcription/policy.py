@@ -8,8 +8,8 @@ from tadween_whisperx.components.artifact import (
     PART_NAMES,
     Artifact,
     CacheSchema,
-    free_audio_cache,
 )
+from tadween_whisperx.components.throttle import free_audio_cache
 from tadween_whisperx.components.utils import timing_callback
 
 from .handler import TranscriptionInput, TranscriptionOutput
