@@ -49,7 +49,9 @@ def _execute_pipeline(config: AppConfig):
 
     try:
         count = 0
-        for i, result in enumerate(scanner.scan()):
+        for i, result in enumerate(
+            scanner.scan(include=config.input.include, exclude=config.input.exclude)
+        ):
             wf.submit(
                 result.task_input,
                 metadata={

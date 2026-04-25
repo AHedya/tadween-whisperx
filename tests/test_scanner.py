@@ -166,3 +166,78 @@ class TestLocalScanner:
         assert len(results) == 1
         assert results[0].artifact_id == "deep.wav"
         scanner.close()
+
+
+class TestScannerFiltering:
+    def test_local_include_filter(self, tmp_path: Path):
+        (tmp_path / "match_1.wav").touch()
+        (tmp_path / "skip_1.wav").touch()
+        config = LocalInputConfig(paths=[tmp_path])
+        scanner = LocalScanner(config)
+        results = list(scanner.scan(include=["match_*"]))
+        assert len(results) == 1
+        assert results[0].artifact_id == "match_1.wav"
+
+    def test_local_include_str(self, tmp_path: Path):
+        (tmp_path / "match_1.wav").touch()
+        config = LocalInputConfig(paths=[tmp_path])
+        scanner = LocalScanner(config)
+        results = list(scanner.scan(include="match_*"))
+        assert len(results) == 1
+
+    def test_local_exclude_filter(self, tmp_path: Path):
+        (tmp_path / "keep.wav").touch()
+        (tmp_path / "ignore.wav").touch()
+        config = LocalInputConfig(paths=[tmp_path])
+        scanner = LocalScanner(config)
+        results = list(scanner.scan(exclude=["ignore*"]))
+        assert len(results) == 1
+        assert results[0].artifact_id == "keep.wav"
+
+    def test_local_combined_filters(self, tmp_path: Path):
+        (tmp_path / "audio_v1.wav").touch()
+        (tmp_path / "audio_v2.wav").touch()
+        (tmp_path / "other.wav").touch()
+        config = LocalInputConfig(paths=[tmp_path])
+        scanner = LocalScanner(config)
+        results = list(scanner.scan(include=["audio_*"], exclude=["*_v1.wav"]))
+        assert len(results) == 1
+        assert results[0].artifact_id == "audio_v2.wav"
+
+    def test_s3_key_filtering(self):
+        from unittest.mock import MagicMock, patch
+
+        from tadween_whisperx.scanners.s3 import S3Scanner
+
+        config = S3InputConfig(
+            bucket="b",
+            prefix="p/",
+            aws_access_key_id="k",
+            aws_secret_access_key="s",
+        )
+
+        with (
+            patch("boto3.client") as mock_boto,
+            patch("tadween_whisperx.scanners.s3.preflight_check"),
+        ):
+            mock_s3 = MagicMock()
+            mock_boto.return_value = mock_s3
+            paginator = MagicMock()
+            mock_s3.get_paginator.return_value = paginator
+            paginator.paginate.return_value = [
+                {
+                    "Contents": [
+                        {"Key": "p/sub1/match.wav"},
+                        {"Key": "p/sub1/ignore.wav"},
+                        {"Key": "p/sub2/no_match.wav"},
+                    ]
+                }
+            ]
+
+            scanner = S3Scanner(config)
+            results = list(
+                scanner.scan(include=["*/match.wav"], exclude=["*/ignore.wav"])
+            )
+
+            assert len(results) == 1
+            assert results[0].file_path == Path("p/sub1/match.wav")

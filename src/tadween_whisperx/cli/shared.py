@@ -25,9 +25,15 @@ def add_input_commands(
         paths: Annotated[
             list[Path], typer.Argument(help="Files or directories to process")
         ],
+        include: Annotated[
+            list[str] | None, typer.Option("--include", help="Include patterns (glob)")
+        ] = None,
+        exclude: Annotated[
+            list[str] | None, typer.Option("--exclude", help="Exclude patterns (glob)")
+        ] = None,
     ) -> None:
         config = get_config()
-        config.input = LocalInputConfig(paths=paths)
+        config.input = LocalInputConfig(paths=paths, include=include, exclude=exclude)
         action(config)
 
     @app.command("s3", help=s3_help)
@@ -62,6 +68,12 @@ def add_input_commands(
                 help="Whether to keep downloaded files",
             ),
         ] = False,
+        include: Annotated[
+            list[str] | None, typer.Option("--include", help="Include patterns (glob)")
+        ] = None,
+        exclude: Annotated[
+            list[str] | None, typer.Option("--exclude", help="Exclude patterns (glob)")
+        ] = None,
         max_retries: Annotated[
             int | None, typer.Option("--max-retries", help="Maximum download retries")
         ] = None,
@@ -97,6 +109,8 @@ def add_input_commands(
             "region_name": region,
             "keep_downloaded": keep,
             "download_path": download_path,
+            "include": include,
+            "exclude": exclude,
             "max_retries": max_retries,
             "multipart_threshold_mb": multipart_threshold,
             "max_workers": max_workers,

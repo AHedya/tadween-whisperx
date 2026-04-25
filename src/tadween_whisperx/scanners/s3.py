@@ -27,7 +27,11 @@ class S3Scanner(BaseScanner[S3InputConfig]):
         )
         preflight_check(self._client, config.bucket, config.prefix, logger=self.logger)
 
-    def scan(self) -> Generator[ScanResult, None, None]:
+    def scan(
+        self,
+        include: str | list[str] | None = None,
+        exclude: str | list[str] | None = None,
+    ) -> Generator[ScanResult, None, None]:
         s3_cfg = self.config
         self.logger.info(
             f"Scanning S3 bucket '{s3_cfg.bucket}' with prefix '{s3_cfg.prefix}'"
@@ -37,7 +41,11 @@ class S3Scanner(BaseScanner[S3InputConfig]):
         for page in paginator.paginate(Bucket=s3_cfg.bucket, Prefix=s3_cfg.prefix):
             for obj in page.get("Contents", []):
                 key = obj["Key"]
-                if Path(key).suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS:
+                if Path(
+                    key
+                ).suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS and self.matches_filters(
+                    key, include, exclude
+                ):
                     self.logger.debug(f"Found S3 object: {key}")
                     local_path = self.config.download_path / Path(key).name
                     yield ScanResult(

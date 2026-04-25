@@ -26,7 +26,9 @@ def _execute_scan(config: AppConfig) -> None:
 
     try:
         count = 0
-        for result in scanner.scan():
+        for result in scanner.scan(
+            include=config.input.include, exclude=config.input.exclude
+        ):
             console.print(
                 f"Found: [cyan]{result.file_path}[/cyan] "
                 f"(Artifact ID: [magenta]{result.artifact_id}[/magenta])"

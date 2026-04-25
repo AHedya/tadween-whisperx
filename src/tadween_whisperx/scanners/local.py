@@ -10,11 +10,18 @@ from tadween_whisperx.scanners.base import (
 
 
 class LocalScanner(BaseScanner[LocalInputConfig]):
-    def scan(self) -> Generator[ScanResult, None, None]:
+    def scan(
+        self,
+        include: str | list[str] | None = None,
+        exclude: str | list[str] | None = None,
+    ) -> Generator[ScanResult, None, None]:
         self.logger.info(f"Scanning local paths: {self.config.paths}")
         for path in dict.fromkeys(self.config.paths):
             if path.is_file():
-                if path.suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS:
+                if (
+                    path.suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS
+                    and self.matches_filters(path.name, include, exclude)
+                ):
                     self.logger.debug(f"Found file: {path}")
                     yield ScanResult(
                         artifact_id=path.name,
@@ -27,6 +34,7 @@ class LocalScanner(BaseScanner[LocalInputConfig]):
                     if (
                         file.is_file()
                         and file.suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS
+                        and self.matches_filters(file.name, include, exclude)
                     ):
                         self.logger.debug(f"Found file in directory: {file}")
                         yield ScanResult(

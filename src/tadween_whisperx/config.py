@@ -146,12 +146,17 @@ class LoaderConfig(BaseModel):
     }
 
 
-class LocalInputConfig(BaseModel):
+class BaseInputConfig(BaseModel):
+    include: list[str] | None = None
+    exclude: list[str] | None = None
+
+
+class LocalInputConfig(BaseInputConfig):
     type: Literal["local"] = "local"
     paths: list[Path] = Field(default_factory=list)
 
 
-class S3InputConfig(BaseModel):
+class S3InputConfig(BaseInputConfig):
     type: Literal["s3"] = "s3"
     bucket: str
     prefix: str
