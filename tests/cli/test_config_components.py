@@ -74,8 +74,6 @@ class TestConfigTranscription:
                 "small",
                 "--compute-type",
                 "int8",
-                "--batch-size",
-                "16",
                 "--language",
                 "en",
                 "--threads",
@@ -87,7 +85,6 @@ class TestConfigTranscription:
         assert config.transcription.device == "cpu"
         assert config.transcription.model == "small"
         assert config.transcription.compute_type == "int8"
-        assert config.transcription.batch_size == 16
         assert config.transcription.language == "en"
         assert config.transcription.threads == 8
 
