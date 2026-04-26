@@ -6,6 +6,7 @@ from tadween_whisperx.scanners.base import (
     SUPPORTED_AUDIO_EXTENSIONS,
     BaseScanner,
     ScanResult,
+    generate_artifact_id,
 )
 
 
@@ -23,8 +24,15 @@ class LocalScanner(BaseScanner[LocalInputConfig]):
                     and self.matches_filters(path.name, include, exclude)
                 ):
                     self.logger.debug(f"Found file: {path}")
+                    uri = path.absolute().as_uri()
+                    artifact_id = self.config.id_map.get(
+                        uri,
+                        self.config.id_map.get(
+                            str(path), generate_artifact_id(uri, path.name)
+                        ),
+                    )
                     yield ScanResult(
-                        artifact_id=path.name,
+                        artifact_id=artifact_id,
                         source=str(path),
                         task_input=AudioLoaderInput(file_path=path),
                     )
@@ -37,8 +45,15 @@ class LocalScanner(BaseScanner[LocalInputConfig]):
                         and self.matches_filters(file.name, include, exclude)
                     ):
                         self.logger.debug(f"Found file in directory: {file}")
+                        uri = file.absolute().as_uri()
+                        artifact_id = self.config.id_map.get(
+                            uri,
+                            self.config.id_map.get(
+                                str(file), generate_artifact_id(uri, file.name)
+                            ),
+                        )
                         yield ScanResult(
-                            artifact_id=file.name,
+                            artifact_id=artifact_id,
                             source=str(file),
                             task_input=AudioLoaderInput(file_path=file),
                         )

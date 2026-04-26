@@ -7,7 +7,7 @@ from tadween_core.handler.defaults.s3_downloader import S3DownloadInput
 from tadween_whisperx.components.loader.handler import AudioLoaderInput
 from tadween_whisperx.config import HTTPInputConfig, LocalInputConfig, S3InputConfig
 from tadween_whisperx.scanners import SUPPORTED_AUDIO_EXTENSIONS, create_scanner
-from tadween_whisperx.scanners.base import ScanResult
+from tadween_whisperx.scanners.base import ScanResult, generate_artifact_id
 from tadween_whisperx.scanners.http import HTTPScanner
 from tadween_whisperx.scanners.local import LocalScanner
 from tadween_whisperx.scanners.s3 import S3Scanner
@@ -32,27 +32,31 @@ class TestSupportedAudioExtensions:
 
 class TestScanResult:
     def test_local_scan_result(self):
-
-        task_input = AudioLoaderInput(file_path=Path("/tmp/test.wav"))
+        source = "/tmp/test.wav"
+        artifact_id = generate_artifact_id(Path(source).absolute().as_uri(), "test.wav")
+        task_input = AudioLoaderInput(file_path=Path(source))
         result = ScanResult(
-            artifact_id="test.wav",
-            source="/tmp/test.wav",
+            artifact_id=artifact_id,
+            source=source,
             task_input=task_input,
         )
-        assert result.artifact_id == "test.wav"
-        assert result.source == "/tmp/test.wav"
+        assert result.artifact_id == artifact_id
+        assert result.source == source
         assert isinstance(result.task_input, AudioLoaderInput)
 
     def test_s3_scan_result(self):
-
-        task_input = S3DownloadInput(bucket="b", key="audio/test.wav")
+        bucket = "b"
+        key = "audio/test.wav"
+        canonical_uri = f"s3://{bucket}/{key}"
+        artifact_id = generate_artifact_id(canonical_uri, "test.wav")
+        task_input = S3DownloadInput(bucket=bucket, key=key)
         result = ScanResult(
-            artifact_id="audio_test.wav",
-            source="audio/test.wav",
+            artifact_id=artifact_id,
+            source=key,
             task_input=task_input,
         )
-        assert result.artifact_id == "audio_test.wav"
-        assert result.source == "audio/test.wav"
+        assert result.artifact_id == artifact_id
+        assert result.source == key
         assert isinstance(result.task_input, S3DownloadInput)
 
 
@@ -89,7 +93,8 @@ class TestLocalScanner:
         scanner = LocalScanner(config)
         results = list(scanner.scan())
         assert len(results) == 1
-        assert results[0].artifact_id == "test.wav"
+        expected_id = generate_artifact_id(wav_file.absolute().as_uri(), "test.wav")
+        assert results[0].artifact_id == expected_id
         assert results[0].source == str(wav_file)
         scanner.close()
 
@@ -116,7 +121,11 @@ class TestLocalScanner:
         results = list(scanner.scan())
         assert len(results) == 2
         names = {r.artifact_id for r in results}
-        assert names == {"a.wav", "b.mp3"}
+        expected_names = {
+            generate_artifact_id(wav1.absolute().as_uri(), "a.wav"),
+            generate_artifact_id(wav2.absolute().as_uri(), "b.mp3"),
+        }
+        assert names == expected_names
         scanner.close()
 
     def test_scan_deduplicates_paths(self, tmp_path: Path):
@@ -137,8 +146,12 @@ class TestLocalScanner:
         scanner = LocalScanner(config)
         results = list(scanner.scan())
         assert len(results) == 2
-        assert results[0].artifact_id == "a.wav"
-        assert results[1].artifact_id == "b.mp3"
+        assert results[0].artifact_id == generate_artifact_id(
+            f1.absolute().as_uri(), "a.wav"
+        )
+        assert results[1].artifact_id == generate_artifact_id(
+            f2.absolute().as_uri(), "b.mp3"
+        )
         scanner.close()
 
     def test_scan_empty_paths(self):
@@ -164,7 +177,9 @@ class TestLocalScanner:
         scanner = LocalScanner(config)
         results = list(scanner.scan())
         assert len(results) == 1
-        assert results[0].artifact_id == "deep.wav"
+        assert results[0].artifact_id == generate_artifact_id(
+            wav.absolute().as_uri(), "deep.wav"
+        )
         scanner.close()
 
 
@@ -176,7 +191,10 @@ class TestScannerFiltering:
         scanner = LocalScanner(config)
         results = list(scanner.scan(include=["match_*"]))
         assert len(results) == 1
-        assert results[0].artifact_id == "match_1.wav"
+        expected_id = generate_artifact_id(
+            (tmp_path / "match_1.wav").absolute().as_uri(), "match_1.wav"
+        )
+        assert results[0].artifact_id == expected_id
 
     def test_local_include_str(self, tmp_path: Path):
         (tmp_path / "match_1.wav").touch()
@@ -192,7 +210,10 @@ class TestScannerFiltering:
         scanner = LocalScanner(config)
         results = list(scanner.scan(exclude=["ignore*"]))
         assert len(results) == 1
-        assert results[0].artifact_id == "keep.wav"
+        expected_id = generate_artifact_id(
+            (tmp_path / "keep.wav").absolute().as_uri(), "keep.wav"
+        )
+        assert results[0].artifact_id == expected_id
 
     def test_local_combined_filters(self, tmp_path: Path):
         (tmp_path / "audio_v1.wav").touch()
@@ -202,7 +223,10 @@ class TestScannerFiltering:
         scanner = LocalScanner(config)
         results = list(scanner.scan(include=["audio_*"], exclude=["*_v1.wav"]))
         assert len(results) == 1
-        assert results[0].artifact_id == "audio_v2.wav"
+        expected_id = generate_artifact_id(
+            (tmp_path / "audio_v2.wav").absolute().as_uri(), "audio_v2.wav"
+        )
+        assert results[0].artifact_id == expected_id
 
     def test_s3_key_filtering(self):
 
@@ -238,16 +262,71 @@ class TestScannerFiltering:
 
             assert len(results) == 1
             assert results[0].source == "p/sub1/match.wav"
+            expected_id = generate_artifact_id("s3://b/p/sub1/match.wav", "match.wav")
+            assert results[0].artifact_id == expected_id
+
+
+class TestScannerIDMap:
+    def test_local_id_map_override(self, tmp_path: Path):
+        wav_file = tmp_path / "test.wav"
+        wav_file.touch()
+        uri = wav_file.absolute().as_uri()
+        custom_id = "custom_local_id"
+
+        # Test override via URI and via string path
+        config = LocalInputConfig(paths=[wav_file], id_map={uri: custom_id})
+        scanner = LocalScanner(config)
+        results = list(scanner.scan())
+        assert results[0].artifact_id == custom_id
+
+        config_path = LocalInputConfig(
+            paths=[wav_file], id_map={str(wav_file): "custom_path_id"}
+        )
+        scanner_path = LocalScanner(config_path)
+        results_path = list(scanner_path.scan())
+        assert results_path[0].artifact_id == "custom_path_id"
+
+    def test_s3_id_map_override(self):
+        config = S3InputConfig(
+            bucket="b",
+            prefix="p/",
+            aws_access_key_id="k",
+            aws_secret_access_key="s",
+            id_map={"s3://b/p/test.wav": "custom_s3_id"},
+        )
+
+        with (
+            patch("boto3.client") as mock_boto,
+            patch("tadween_whisperx.scanners.s3.preflight_check"),
+        ):
+            mock_s3 = MagicMock()
+            mock_boto.return_value = mock_s3
+            paginator = MagicMock()
+            mock_s3.get_paginator.return_value = paginator
+            paginator.paginate.return_value = [{"Contents": [{"Key": "p/test.wav"}]}]
+
+            scanner = S3Scanner(config)
+            results = list(scanner.scan())
+            assert results[0].artifact_id == "custom_s3_id"
+
+    def test_http_id_map_override(self):
+        url = "https://example.com/audio.wav"
+        config = HTTPInputConfig(urls=[url], id_map={url: "custom_http_id"})
+        scanner = HTTPScanner(config)
+        results = list(scanner.scan())
+        assert results[0].artifact_id == "custom_http_id"
 
 
 class TestHTTPScanner:
     def test_scan_with_extension(self):
-        config = HTTPInputConfig(urls=["https://example.com/audio.wav"])
+        url = "https://example.com/audio.wav"
+        config = HTTPInputConfig(urls=[url])
         scanner = HTTPScanner(config)
         results = list(scanner.scan())
         assert len(results) == 1
-        assert results[0].source == "https://example.com/audio.wav"
-        assert results[0].artifact_id.endswith("audio.wav")
+        assert results[0].source == url
+        expected_id = generate_artifact_id(url, "audio.wav")
+        assert results[0].artifact_id == expected_id
         scanner.close()
 
     @patch("requests.head")
@@ -258,16 +337,16 @@ class TestHTTPScanner:
         mock_response.headers = {"Content-Type": "audio/mpeg"}
         mock_head.return_value = mock_response
 
-        config = HTTPInputConfig(urls=["https://example.com/stream"])
+        url = "https://example.com/stream"
+        config = HTTPInputConfig(urls=[url])
         scanner = HTTPScanner(config)
         results = list(scanner.scan())
 
         assert len(results) == 1
-        assert results[0].source == "https://example.com/stream"
-        assert "stream" in results[0].artifact_id
-        mock_head.assert_called_once_with(
-            "https://example.com/stream", timeout=10, allow_redirects=True
-        )
+        assert results[0].source == url
+        expected_id = generate_artifact_id(url, "stream")
+        assert results[0].artifact_id == expected_id
+        mock_head.assert_called_once_with(url, timeout=10, allow_redirects=True)
         scanner.close()
 
     @patch("requests.head")

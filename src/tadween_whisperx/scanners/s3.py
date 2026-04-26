@@ -11,6 +11,7 @@ from tadween_whisperx.scanners.base import (
     SUPPORTED_AUDIO_EXTENSIONS,
     BaseScanner,
     ScanResult,
+    generate_artifact_id,
 )
 
 
@@ -41,15 +42,23 @@ class S3Scanner(BaseScanner[S3InputConfig]):
         for page in paginator.paginate(Bucket=s3_cfg.bucket, Prefix=s3_cfg.prefix):
             for obj in page.get("Contents", []):
                 key = obj["Key"]
+                filename = Path(key).name
                 if Path(
                     key
                 ).suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS and self.matches_filters(
                     key, include, exclude
                 ):
                     self.logger.debug(f"Found S3 object: {key}")
-                    local_path = self.config.download_path / Path(key).name
+                    local_path = self.config.download_path / filename
+                    canonical_uri = f"s3://{s3_cfg.bucket}/{key}"
+                    artifact_id = self.config.id_map.get(
+                        canonical_uri,
+                        self.config.id_map.get(
+                            key, generate_artifact_id(canonical_uri, filename)
+                        ),
+                    )
                     yield ScanResult(
-                        artifact_id=key.replace("/", "_"),
+                        artifact_id=artifact_id,
                         source=key,
                         task_input=S3DownloadInput(
                             bucket=s3_cfg.bucket,

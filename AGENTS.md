@@ -38,6 +38,7 @@ tadweenx scan     # Preview input discovery
 2. **Context Efficiency**: Use `BaseCache` for heavy data and `throttle.free_audio_cache` for cleanup.
 3. **Optional Repo**: Handle `repo=None` in policies for transient runs.
 4. **Validation**: Call `config.validate()` manually in the builder or entry points; it is not automatic on instantiation.
+5. **Deterministic IDs**: Always use `generate_artifact_id` from `scanners.base` when discovering new inputs to ensure unique, trackable, and repository-safe identifiers. If a higher-level system provides an ID, it should be passed via the `id_map` in the input configuration to override generation.
 
 ## Exploration Guide
 - **Workflow assembly**: Check `builder.py` and `component.py`.

@@ -149,6 +149,7 @@ class LoaderConfig(BaseModel):
 class BaseInputConfig(BaseModel):
     include: list[str] | str | None = None
     exclude: list[str] | str | None = None
+    id_map: dict[str, str] = Field(default_factory=dict)
 
 
 class LocalInputConfig(BaseInputConfig):

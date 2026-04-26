@@ -1,8 +1,10 @@
 import fnmatch
+import hashlib
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Generator
 from typing import Generic, TypeVar
+from urllib.parse import quote_plus
 
 from pydantic import BaseModel
 from tadween_core.handler.defaults.downloader import DownloadInput
@@ -12,6 +14,26 @@ from tadween_whisperx.components.loader.handler import AudioLoaderInput
 from tadween_whisperx.config import BaseInputConfig
 
 SUPPORTED_AUDIO_EXTENSIONS = frozenset({".wav", ".mp3", ".m4a", ".flac", ".opus"})
+
+
+def generate_artifact_id(canonical_uri: str, filename: str) -> str:
+    """
+    Generates a deterministic, filesystem-safe artifact ID.
+
+    Args:
+        canonical_uri: A standardized string representing the exact location.
+        filename: The original filename to include in the ID.
+
+    Returns:
+        A unique, sanitized string: {hash_of_canonical_uri}_{sanitized_filename}
+    """
+    uri_hash = hashlib.md5(canonical_uri.encode("utf-8")).hexdigest()[:8]
+
+    # Sanitize the filename to ensure it's safe for any repository backend
+    safe_filename = quote_plus(filename)
+
+    return f"{uri_hash}_{safe_filename}"
+
 
 T = TypeVar("T", bound=BaseInputConfig)
 

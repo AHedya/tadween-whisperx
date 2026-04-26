@@ -11,6 +11,7 @@ from tadween_whisperx.scanners.base import (
     SUPPORTED_AUDIO_EXTENSIONS,
     BaseScanner,
     ScanResult,
+    generate_artifact_id,
 )
 
 
@@ -44,11 +45,9 @@ class HTTPScanner(BaseScanner[HTTPInputConfig]):
             if is_supported and self.matches_filters(name, include, exclude):
                 self.logger.debug(f"Found HTTP URL: {url}")
 
-                # Improved artifact_id: domain + hash of path to avoid collisions
-                # path_hash = hashlib.md5(url.encode()).hexdigest()[:8]
-                # artifact_id = f"{parsed.netloc}_{path_hash}_{name}"
-
-                artifact_id = name
+                artifact_id = self.config.id_map.get(
+                    url, generate_artifact_id(url, name)
+                )
                 local_path = self.config.download_path / name
 
                 if not local_path.suffix and not name.endswith(

@@ -62,6 +62,33 @@ tadweenx config show
 
 The system uses a YAML configuration stored in `~/.config/tadween-whisperx/config.yaml`. It supports multiple "Repo Profiles," allowing you to save processing results to a local JSON structure or an S3 bucket.
 
+### Deterministic Artifact IDs
+To ensure results are reliably trackable across different environments and to prevent collisions in the repository, `tadween-whisperx` uses a deterministic hashing function to generate `artifact_id`s.
+
+The ID format is: `{hash_of_canonical_uri}_{sanitized_filename}`
+
+- **Canonical URIs**:
+    - Local: `file:///absolute/path/to/audio.mp3`
+    - S3: `s3://bucket-name/key/to/audio.mp3`
+    - HTTP: The full source URL.
+- **Hash**: An 8-character MD5 hash of the Canonical URI.
+- **Sanitization**: Filenames are URL-encoded to ensure safety across all storage backends.
+
+This allows external systems to calculate the expected `artifact_id` for any given input file without needing to query the scanner results.
+
+### Overriding Artifact IDs
+If your system already has unique identifiers for these files (e.g., from a database), you can override the deterministic generation by providing an `id_map` in the input configuration.
+
+```yaml
+input:
+  type: local
+  paths: ["./audio.mp3"]
+  id_map:
+    "file:///absolute/path/to/audio.mp3": "custom-id-123"
+```
+
+The system will prioritize any ID found in the `id_map` before falling back to generation.
+
 ## Development and Quality
 
 We use nox for standard development tasks:
