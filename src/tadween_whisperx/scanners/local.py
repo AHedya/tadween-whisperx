@@ -25,7 +25,7 @@ class LocalScanner(BaseScanner[LocalInputConfig]):
                     self.logger.debug(f"Found file: {path}")
                     yield ScanResult(
                         artifact_id=path.name,
-                        file_path=str(path),
+                        source=str(path),
                         task_input=AudioLoaderInput(file_path=path),
                     )
             elif path.is_dir():
@@ -39,6 +39,6 @@ class LocalScanner(BaseScanner[LocalInputConfig]):
                         self.logger.debug(f"Found file in directory: {file}")
                         yield ScanResult(
                             artifact_id=file.name,
-                            file_path=file,
+                            source=str(file),
                             task_input=AudioLoaderInput(file_path=file),
                         )

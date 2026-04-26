@@ -1,12 +1,13 @@
 import time
-from pathlib import Path
 
+from tadween_core.handler.defaults.downloader import (
+    DownloadInput,
+    DownloadOutput,
+)
 from tadween_core.handler.defaults.s3_downloader import (
     S3DownloadInput,
-    S3DownloadOutput,
 )
 from tadween_core.stage import DefaultStagePolicy, decorators
-from tadween_core.stage.policy import InterceptionAction, InterceptionContext
 
 from tadween_whisperx.components.artifact import (
     PART_NAMES,
@@ -20,26 +21,13 @@ from tadween_whisperx.components.utils import timing_callback
 from .handler import AudioLoaderInput, AudioLoaderOutput
 
 
-class S3Policy(DefaultStagePolicy[S3DownloadInput, S3DownloadOutput, CacheSchema]):
-    # check if already downloaded
-    def intercept(self, message, broker=None, repo=None, cache=None):
-        if message.metadata.get("file_name") == "compressed-1/ar-180m-podcast-3s.opus":
-            return InterceptionContext(
-                True, reason="lengthy", action=InterceptionAction.cancel()
-            )
-
-        if local_fp := message.metadata.get("local_path"):
-            local_fp = Path(local_fp)
-            if local_fp.exists():
-                return InterceptionContext(
-                    True,
-                    S3DownloadOutput(
-                        local_path=local_fp,
-                        size_bytes=local_fp.stat().st_size,
-                        download_duration_seconds=0,
-                    ),
-                )
-
+class DownloadPolicy(
+    DefaultStagePolicy[
+        S3DownloadInput | DownloadInput,
+        DownloadOutput,
+        CacheSchema,
+    ]
+):
     @decorators.write_cache(cache_field="file_path", result_field="local_path")
     def on_success(self, task_id, message, result, broker=None, repo=None, cache=None):
         pass

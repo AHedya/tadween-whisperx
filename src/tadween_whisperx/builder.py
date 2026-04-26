@@ -87,6 +87,8 @@ class WorkflowBuilder:
                 repo=repo,
                 context=wf_context,
                 resources=get_workflow_resources(),
+                # no payload propagation
+                default_payload_extractor=lambda x: {},
             )
 
             active_nodes: set[COMPONENTS_NAME] = set()

@@ -3,7 +3,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from tadween_whisperx.cli import app
-from tadween_whisperx.config import S3InputConfig, load_config
+from tadween_whisperx.config import LocalInputConfig, S3InputConfig, load_config
 
 
 class TestConfigInputLocal:
@@ -12,7 +12,6 @@ class TestConfigInputLocal:
         file2 = tmp_path / "audio2.mp3"
         file1.touch()
         file2.touch()
-        from tadween_whisperx.config import LocalInputConfig
 
         runner.invoke(app, ["config", "init"])
         result = runner.invoke(
@@ -28,7 +27,6 @@ class TestConfigInputLocal:
     def test_overwrites_previous_input(
         self, runner: CliRunner, isolated_config, tmp_path: Path
     ):
-        from tadween_whisperx.config import LocalInputConfig
 
         runner.invoke(app, ["config", "init"])
         runner.invoke(
@@ -141,7 +139,6 @@ class TestConfigInputS3:
         assert config.input.max_concurrency_per_file == 4
 
     def test_s3_input_overwrites_local(self, runner: CliRunner, isolated_config):
-        from tadween_whisperx.config import LocalInputConfig
 
         runner.invoke(app, ["config", "init"])
         runner.invoke(app, ["config", "input", "local", "/some/path"])

@@ -147,8 +147,8 @@ class LoaderConfig(BaseModel):
 
 
 class BaseInputConfig(BaseModel):
-    include: list[str] | None = None
-    exclude: list[str] | None = None
+    include: list[str] | str | None = None
+    exclude: list[str] | str | None = None
 
 
 class LocalInputConfig(BaseInputConfig):
@@ -190,7 +190,29 @@ class S3InputConfig(BaseInputConfig):
         return v
 
 
-InputConfig = Annotated[LocalInputConfig | S3InputConfig, Field(discriminator="type")]
+class HTTPInputConfig(BaseInputConfig):
+    type: Literal["http"] = "http"
+    urls: list[str] = Field(default_factory=list)
+
+    max_retries: int = 3
+    timeout_seconds: int = 300
+
+    # queue
+    task_queue: dict = {
+        "executor": "thread",
+        "max_workers": 2,
+        "name": "http_input",
+    }
+
+    download_path: Path = Field(
+        default_factory=lambda: Path(tempfile.mkdtemp(prefix="tadween-x_"))
+    )
+    keep_downloaded: bool = False
+
+
+InputConfig = Annotated[
+    LocalInputConfig | S3InputConfig | HTTPInputConfig, Field(discriminator="type")
+]
 
 
 class AppConfig(BaseSettings):

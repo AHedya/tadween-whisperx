@@ -26,4 +26,5 @@ add_input_commands(
     action=_execute_pipeline,
     local_help="Run pipeline on local files/directories.",
     s3_help="Run pipeline on S3 objects.",
+    http_help="Run pipeline on HTTP URLs.",
 )

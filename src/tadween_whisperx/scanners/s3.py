@@ -50,7 +50,7 @@ class S3Scanner(BaseScanner[S3InputConfig]):
                     local_path = self.config.download_path / Path(key).name
                     yield ScanResult(
                         artifact_id=key.replace("/", "_"),
-                        file_path=key,
+                        source=key,
                         task_input=S3DownloadInput(
                             bucket=s3_cfg.bucket,
                             key=key,

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Literal
 
 from tadween_core.coord import StageContextConfig, WorkflowContext
+from tadween_core.handler.defaults.downloader import DownloadHandler
 from tadween_core.handler.defaults.s3_downloader import S3DownloadHandler
 from tadween_core.task_queue import init_queue
 from tadween_core.workflow.workflow import Workflow
@@ -21,7 +22,7 @@ from tadween_whisperx.components.loader.handler import (
     AVHandler,
     TorchCodecHandler,
 )
-from tadween_whisperx.components.loader.policy import LoaderPolicy, S3Policy
+from tadween_whisperx.components.loader.policy import DownloadPolicy, LoaderPolicy
 from tadween_whisperx.components.normalizer.handler import NormalizeHandler
 from tadween_whisperx.components.normalizer.policy import NormalizerPolicy
 from tadween_whisperx.components.throttle import (
@@ -71,9 +72,8 @@ class DownloaderComponent(WorkflowComponent):
     def add_to_workflow(
         self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext
     ):
-        wf.add_stage(
-            self.name,
-            handler=S3DownloadHandler(
+        if config.input.type == "s3":
+            handler = S3DownloadHandler(
                 config.input.download_path,
                 access_key=config.input.aws_access_key_id,
                 secret_key=config.input.aws_secret_access_key,
@@ -83,8 +83,20 @@ class DownloaderComponent(WorkflowComponent):
                 multipart_threshold_mb=config.input.multipart_threshold_mb,
                 max_workers=config.input.max_workers,
                 max_concurrency_per_file=config.input.max_concurrency_per_file,
-            ),
-            policy=S3Policy(),
+            )
+        elif config.input.type == "http":
+            handler = DownloadHandler(
+                config.input.download_path,
+                max_retries=config.input.max_retries,
+                request_timeout=config.input.timeout_seconds,
+            )
+        else:
+            raise ValueError(f"Unsupported downloader input type: {config.input.type}")
+
+        wf.add_stage(
+            self.name,
+            handler=handler,
+            policy=DownloadPolicy(),
         )
 
 

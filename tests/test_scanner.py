@@ -1,11 +1,16 @@
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
+from tadween_core.handler.defaults.s3_downloader import S3DownloadInput
 
-from tadween_whisperx.config import LocalInputConfig, S3InputConfig
+from tadween_whisperx.components.loader.handler import AudioLoaderInput
+from tadween_whisperx.config import HTTPInputConfig, LocalInputConfig, S3InputConfig
 from tadween_whisperx.scanners import SUPPORTED_AUDIO_EXTENSIONS, create_scanner
 from tadween_whisperx.scanners.base import ScanResult
+from tadween_whisperx.scanners.http import HTTPScanner
 from tadween_whisperx.scanners.local import LocalScanner
+from tadween_whisperx.scanners.s3 import S3Scanner
 
 
 class TestSupportedAudioExtensions:
@@ -27,29 +32,27 @@ class TestSupportedAudioExtensions:
 
 class TestScanResult:
     def test_local_scan_result(self):
-        from tadween_whisperx.components.loader.handler import AudioLoaderInput
 
         task_input = AudioLoaderInput(file_path=Path("/tmp/test.wav"))
         result = ScanResult(
             artifact_id="test.wav",
-            file_path="/tmp/test.wav",
+            source="/tmp/test.wav",
             task_input=task_input,
         )
         assert result.artifact_id == "test.wav"
-        assert result.file_path == Path("/tmp/test.wav")
+        assert result.source == "/tmp/test.wav"
         assert isinstance(result.task_input, AudioLoaderInput)
 
     def test_s3_scan_result(self):
-        from tadween_core.handler.defaults.s3_downloader import S3DownloadInput
 
         task_input = S3DownloadInput(bucket="b", key="audio/test.wav")
         result = ScanResult(
             artifact_id="audio_test.wav",
-            file_path="audio/test.wav",
+            source="audio/test.wav",
             task_input=task_input,
         )
         assert result.artifact_id == "audio_test.wav"
-        assert str(result.file_path) == "audio/test.wav"
+        assert result.source == "audio/test.wav"
         assert isinstance(result.task_input, S3DownloadInput)
 
 
@@ -60,9 +63,6 @@ class TestCreateScanner:
         assert isinstance(scanner, LocalScanner)
 
     def test_s3_config_returns_s3_scanner(self):
-        from unittest.mock import patch
-
-        from tadween_whisperx.scanners.s3 import S3Scanner
 
         config = S3InputConfig(
             bucket="test-bucket",
@@ -90,7 +90,7 @@ class TestLocalScanner:
         results = list(scanner.scan())
         assert len(results) == 1
         assert results[0].artifact_id == "test.wav"
-        assert results[0].file_path == wav_file
+        assert results[0].source == str(wav_file)
         scanner.close()
 
     def test_scan_skips_non_audio_file(self, tmp_path: Path):
@@ -205,9 +205,6 @@ class TestScannerFiltering:
         assert results[0].artifact_id == "audio_v2.wav"
 
     def test_s3_key_filtering(self):
-        from unittest.mock import MagicMock, patch
-
-        from tadween_whisperx.scanners.s3 import S3Scanner
 
         config = S3InputConfig(
             bucket="b",
@@ -240,4 +237,50 @@ class TestScannerFiltering:
             )
 
             assert len(results) == 1
-            assert results[0].file_path == Path("p/sub1/match.wav")
+            assert results[0].source == "p/sub1/match.wav"
+
+
+class TestHTTPScanner:
+    def test_scan_with_extension(self):
+        config = HTTPInputConfig(urls=["https://example.com/audio.wav"])
+        scanner = HTTPScanner(config)
+        results = list(scanner.scan())
+        assert len(results) == 1
+        assert results[0].source == "https://example.com/audio.wav"
+        assert results[0].artifact_id.endswith("audio.wav")
+        scanner.close()
+
+    @patch("requests.head")
+    def test_scan_without_extension_success(self, mock_head):
+        # Mock successful HEAD request for audio/mpeg
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.headers = {"Content-Type": "audio/mpeg"}
+        mock_head.return_value = mock_response
+
+        config = HTTPInputConfig(urls=["https://example.com/stream"])
+        scanner = HTTPScanner(config)
+        results = list(scanner.scan())
+
+        assert len(results) == 1
+        assert results[0].source == "https://example.com/stream"
+        assert "stream" in results[0].artifact_id
+        mock_head.assert_called_once_with(
+            "https://example.com/stream", timeout=10, allow_redirects=True
+        )
+        scanner.close()
+
+    @patch("requests.head")
+    def test_scan_without_extension_failure(self, mock_head):
+        # Mock HEAD request for text/html
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.headers = {"Content-Type": "text/html"}
+        mock_head.return_value = mock_response
+
+        config = HTTPInputConfig(urls=["https://example.com/page"])
+        scanner = HTTPScanner(config)
+        results = list(scanner.scan())
+
+        assert len(results) == 0
+        scanner.close()

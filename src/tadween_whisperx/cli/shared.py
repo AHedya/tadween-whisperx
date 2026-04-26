@@ -6,6 +6,7 @@ import typer
 
 from tadween_whisperx.config import (
     AppConfig,
+    HTTPInputConfig,
     LocalInputConfig,
     S3InputConfig,
     get_config,
@@ -17,8 +18,9 @@ def add_input_commands(
     action: Callable[[AppConfig], None],
     local_help: str = "Use local files/directories.",
     s3_help: str = "Use S3 objects.",
+    http_help: str = "Use HTTP URLs.",
 ) -> None:
-    """Add local and s3 subcommands to a Typer app."""
+    """Add local, s3, and http subcommands to a Typer app."""
 
     @app.command("local", help=local_help)
     def local(
@@ -123,6 +125,54 @@ def add_input_commands(
             input_cfg = config.input.model_copy(update=updates)
         else:
             input_cfg = S3InputConfig.model_validate(updates)
+
+        config.input = input_cfg
+        action(config)
+
+    @app.command("http", help=http_help)
+    def http(
+        urls: Annotated[list[str], typer.Argument(help="URLs to process")],
+        include: Annotated[
+            list[str] | None, typer.Option("--include", help="Include patterns (glob)")
+        ] = None,
+        exclude: Annotated[
+            list[str] | None, typer.Option("--exclude", help="Exclude patterns (glob)")
+        ] = None,
+        download_path: Annotated[
+            Path | None,
+            typer.Option("--download-path", help="Local download directory"),
+        ] = None,
+        keep: Annotated[
+            bool,
+            typer.Option(
+                "--keep/--no-keep",
+                "--keep-downloaded/--no-keep-downloaded",
+                help="Whether to keep downloaded files",
+            ),
+        ] = True,
+        max_retries: Annotated[
+            int | None, typer.Option("--max-retries", help="Maximum download retries")
+        ] = None,
+        timeout: Annotated[
+            int | None, typer.Option("--timeout", help="Download timeout in seconds")
+        ] = None,
+    ) -> None:
+        config = get_config()
+        updates = {
+            "urls": urls,
+            "include": include,
+            "exclude": exclude,
+            "download_path": download_path,
+            "keep_downloaded": keep,
+            "max_retries": max_retries,
+            "timeout_seconds": timeout,
+        }
+        updates = {k: v for k, v in updates.items() if v is not None}
+
+        if isinstance(config.input, HTTPInputConfig):
+            input_cfg = config.input.model_copy(update=updates)
+        else:
+            input_cfg = HTTPInputConfig.model_validate(updates)
 
         config.input = input_cfg
         action(config)

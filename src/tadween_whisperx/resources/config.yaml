@@ -2,7 +2,8 @@ input:
   type: local
   paths: []
 
-# Illustrative s3 examlpe
+# Illustrative examlpes
+## --- s3 input
 # input:
 #   type: s3
 #   bucket: "stash-bucket"
@@ -19,6 +20,18 @@ input:
 #     executor: thread
 #     max_workers: 1
 #     name: s3_input
+## --- http input
+# input:
+#   type: http
+#   urls:
+#     - "https://assets.hedya.dev/audio/ar-1-002722-zakir1.opus"
+#     - "https://assets.hedya.dev/audio/en-0-002909-cs50short.opus"
+#   task_queue:
+#     executor: thread
+#     max_workers: 4
+#     name: http_input
+#   keep_downloaded: true
+#   download_path: "/home/projects/tadween/downloads"
 
 repo:
   active: default

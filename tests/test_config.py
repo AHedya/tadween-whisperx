@@ -2,6 +2,7 @@ import copy
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from tadween_whisperx.config import (
     AppConfig,
@@ -233,7 +234,6 @@ class TestLoadConfig:
         assert config.repo.active == "default"
 
     def test_load_from_user_file(self, tmp_config_dir):
-        from tadween_whisperx.config import save_config
 
         original = AppConfig()
         original.repo.profiles["json"] = JsonRepoConfig(
@@ -387,13 +387,11 @@ class TestS3InputConfig:
             )
 
     def test_prefix_missing_rejected(self):
-        from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
             S3InputConfig(bucket="b", aws_access_key_id="k", aws_secret_access_key="s")
 
     def test_prefix_none_rejected(self):
-        from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
             S3InputConfig(
@@ -471,14 +469,10 @@ class TestInputConfigUnion:
         assert isinstance(config.input, S3InputConfig)
 
     def test_invalid_type_rejected(self):
-        from pydantic import ValidationError
-
         with pytest.raises(ValidationError):
             AppConfig.model_validate({"input": {"type": "ftp"}})
 
     def test_s3_without_prefix_rejected_in_union(self):
-        from pydantic import ValidationError
-
         with pytest.raises(ValidationError):
             AppConfig.model_validate(
                 {

@@ -2,10 +2,10 @@ import fnmatch
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Generator
-from pathlib import Path
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel
+from tadween_core.handler.defaults.downloader import DownloadInput
 from tadween_core.handler.defaults.s3_downloader import S3DownloadInput
 
 from tadween_whisperx.components.loader.handler import AudioLoaderInput
@@ -18,8 +18,8 @@ T = TypeVar("T", bound=BaseInputConfig)
 
 class ScanResult(BaseModel):
     artifact_id: str
-    file_path: Path
-    task_input: AudioLoaderInput | S3DownloadInput
+    source: str
+    task_input: AudioLoaderInput | S3DownloadInput | DownloadInput
 
 
 class BaseScanner(ABC, Generic[T]):

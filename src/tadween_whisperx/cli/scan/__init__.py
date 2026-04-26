@@ -30,7 +30,7 @@ def _execute_scan(config: AppConfig) -> None:
             include=config.input.include, exclude=config.input.exclude
         ):
             console.print(
-                f"Found: [cyan]{result.file_path}[/cyan] "
+                f"Found: [cyan]{result.source}[/cyan] "
                 f"(Artifact ID: [magenta]{result.artifact_id}[/magenta])"
             )
             count += 1
@@ -57,4 +57,5 @@ add_input_commands(
     action=_execute_scan,
     local_help="Scan local files/directories.",
     s3_help="Scan S3 objects.",
+    http_help="Scan HTTP URLs.",
 )

@@ -56,8 +56,9 @@ def _execute_pipeline(config: AppConfig):
                 result.task_input,
                 metadata={
                     "cache_key": str(i),
-                    "file_name": str(result.file_path),
+                    "file_name": str(result.source),
                     "artifact_id": result.artifact_id,
+                    "id": result.artifact_id,
                 },
             )
             count += 1
