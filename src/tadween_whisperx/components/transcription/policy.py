@@ -4,13 +4,13 @@ from tadween_core.stage import DefaultStagePolicy, decorators
 from tadween_core.stage.decorators import inject_cache, write_cache
 from tadween_core.stage.policy import InterceptionAction, InterceptionContext  # noqa
 
+from tadween_whisperx._logging import timing_callback
 from tadween_whisperx.components.artifact import (
     PART_NAMES,
     Artifact,
     CacheSchema,
 )
 from tadween_whisperx.components.throttle import free_audio_cache
-from tadween_whisperx.components.utils import timing_callback
 
 from .handler import TranscriptionInput, TranscriptionOutput
 from .schema import TranscriptionPart
@@ -43,7 +43,7 @@ class TranscriptionPolicy(
 
     @decorators.done_timing(
         stage_name="transcriber",
-        label_key="file_name",
+        label_key="artifact_id",
         mode="before",
         callback=timing_callback,
     )

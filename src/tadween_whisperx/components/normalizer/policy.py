@@ -2,13 +2,13 @@ import time
 
 from tadween_core.stage import DefaultStagePolicy, decorators
 
+from tadween_whisperx._logging import timing_callback
 from tadween_whisperx.components.artifact import (
     PART_NAMES,
     Artifact,
     CacheSchema,
 )
 from tadween_whisperx.components.normalizer.schema import NormalizationPart
-from tadween_whisperx.components.utils import timing_callback
 
 from .handler import NormalizerInput
 
@@ -49,7 +49,7 @@ class NormalizerPolicy(
 
     @decorators.done_timing(
         stage_name="Normalizer",
-        label_key="file_name",
+        label_key="artifact_id",
         mode="before",
         callback=timing_callback,
     )

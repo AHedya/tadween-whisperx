@@ -5,13 +5,13 @@ from tadween_core.stage import DefaultStagePolicy, decorators
 from tadween_core.stage.decorators import inject_cache
 from tadween_core.stage.policy import InterceptionAction, InterceptionContext  # noqa
 
+from tadween_whisperx._logging import timing_callback
 from tadween_whisperx.components.artifact import (
     PART_NAMES,
     Artifact,
     CacheSchema,
 )
 from tadween_whisperx.components.throttle import free_audio_cache
-from tadween_whisperx.components.utils import timing_callback
 
 from .handler import AlignmentInput, AlignmentOutput
 from .schema import AlignmentPart
@@ -69,7 +69,7 @@ class AlignmentPolicy(
 
     @decorators.done_timing(
         stage_name="Alignment",
-        label_key="file_name",
+        label_key="artifact_id",
         mode="before",
         callback=timing_callback,
     )

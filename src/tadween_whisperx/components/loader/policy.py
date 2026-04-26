@@ -9,6 +9,7 @@ from tadween_core.handler.defaults.s3_downloader import (
 )
 from tadween_core.stage import DefaultStagePolicy, decorators
 
+from tadween_whisperx._logging import timing_callback
 from tadween_whisperx.components.artifact import (
     PART_NAMES,
     Artifact,
@@ -16,7 +17,6 @@ from tadween_whisperx.components.artifact import (
     CacheSchema,
     MetaModel,
 )
-from tadween_whisperx.components.utils import timing_callback
 
 from .handler import AudioLoaderInput, AudioLoaderOutput
 
@@ -34,7 +34,7 @@ class DownloadPolicy(
 
     @decorators.done_timing(
         stage_name="downloader",
-        label_key="file_name",
+        label_key="artifact_id",
         mode="before",
         callback=timing_callback,
     )
@@ -75,7 +75,7 @@ class LoaderPolicy(
 
     @decorators.done_timing(
         stage_name="loader",
-        label_key="file_name",
+        label_key="artifact_id",
         mode="before",
         callback=timing_callback,
     )
