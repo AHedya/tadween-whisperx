@@ -22,6 +22,7 @@ tadween-whisperx is a **whisperx wrapper** and **tadween-core pipeline implement
     - `policy.py`: Stage orchestration (intercept/resolve/success).
     - `schema.py`: Pydantic I/O models.
 - **Throttle**: Centralizes pressure management (stash logic) and resource capacity (`get_workflow_resources`).
+- **Resource Cleanup**: Uses `tadween-core`'s `on_artifact_done` hook (in `builder.py` calling `throttle.release_cache`) to ensure stash slots and cache buckets are released exactly once when an audio file finishes processing, regardless of pipeline success or failure.
 - **Builder**: Assembles the `Workflow` DAG, handles fallback linking for disabled stages, and injects `StageContextConfig`.
 
 ## Commands

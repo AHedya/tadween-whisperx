@@ -2175,7 +2175,7 @@ wheels = [
 
 [[package]]
 name = "tadween-core"
-version = "0.1.0a12"
+version = "0.1.0a14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgpack" },
@@ -2183,9 +2183,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/40/1b/194567c7b08aef05d2de3089a7c87ba5861211c50b3d48662fd6e164c18d/tadween_core-0.1.0a12.tar.gz", hash = "sha256:097408f812a38daaa6511030e66d92ee26fd535493522e876fa81ec482260201", size = 298428, upload-time = "2026-04-22T02:42:27.508Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/e2/5813e5cdf8751ad58fa82cfddb1f6cf19d5b7dbcdc3cd32b94d136eeb636/tadween_core-0.1.0a14.tar.gz", hash = "sha256:2b00242e7f5cefdb6a7b589d0de7ac527e61532778f97886b4a552db83e4ad32", size = 306109, upload-time = "2026-04-29T07:32:35.998Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/31/87/f3c1a9a548ba3559480d7cbeaa3734691add9805648bd0462bbc77d214ef/tadween_core-0.1.0a12-py3-none-any.whl", hash = "sha256:5639a610a1fb282776c1aa57795753cd21724455c54edb0e99fa614fc3126a5b", size = 138252, upload-time = "2026-04-22T02:42:26.509Z" },
+    { url = "https://files.pythonhosted.org/packages/91/4b/bc01309a7ee4b2cddfdb36b153b119a79e477b833962537284234ed5cc4a/tadween_core-0.1.0a14-py3-none-any.whl", hash = "sha256:f49d500cf9c441ef177e774d9baea23f96d8b7a27271090047851d40d0aad826", size = 142187, upload-time = "2026-04-29T07:32:34.921Z" },
 ]
 
 [package.optional-dependencies]
@@ -2229,7 +2229,7 @@ requires-dist = [
     { name = "pympler", specifier = ">=1.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "rich", specifier = ">=13.0.0" },
-    { name = "tadween-core", extras = ["s3"] },
+    { name = "tadween-core", extras = ["s3"], specifier = ">=0.1.0a14" },
     { name = "torch", specifier = "==2.8.0+cu128", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchaudio", specifier = "==2.8.0+cu128", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchcodec", specifier = "==0.6.0", index = "https://download.pytorch.org/whl/cu128" },

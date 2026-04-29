@@ -1,3 +1,4 @@
+import functools
 import logging
 from collections import OrderedDict
 
@@ -21,7 +22,10 @@ from tadween_whisperx.components.component import (
     TranscriptionComponent,
     WorkflowComponent,
 )
-from tadween_whisperx.components.throttle import get_workflow_resources
+from tadween_whisperx.components.throttle import (
+    get_workflow_resources,
+    release_cache,
+)
 from tadween_whisperx.config import (
     AppConfig,
     ConfigError,
@@ -81,6 +85,13 @@ class WorkflowBuilder:
             cache = SimpleCache(CacheSchema)
             repo = self._get_repo(self.config.repo)
             wf_context = WorkflowContext()
+            # Inject cache for centralized cleanup in throttle.py
+            wf_context.state["__cache__"] = cache
+
+            wf_context.on_artifact_done(
+                functools.partial(release_cache, ctx=wf_context)
+            )
+
             wf = Workflow(
                 broker=broker,
                 cache=cache,
@@ -100,7 +111,7 @@ class WorkflowBuilder:
 
             for name in active_nodes:
                 self.logger.info(f"Adding stage: {name}")
-                self._components[name].add_to_workflow(self.config, wf, wf_context)
+                self._components[name].add_to_workflow(self.config, wf)
 
             for name in active_nodes:
                 actual_deps = self._resolve_active_dependencies(name, active_nodes)

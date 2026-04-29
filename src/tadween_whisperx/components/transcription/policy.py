@@ -10,7 +10,6 @@ from tadween_whisperx.components.artifact import (
     Artifact,
     CacheSchema,
 )
-from tadween_whisperx.components.throttle import free_audio_cache
 
 from .handler import TranscriptionInput, TranscriptionOutput
 from .schema import TranscriptionPart
@@ -30,16 +29,12 @@ class TranscriptionPolicy(
         if repo is None:
             return
         id = message.metadata.get("artifact_id")
-        cache_key = message.metadata.get("cache_key")
         art = repo.load(id, None)
         art.meta.updated_at = time.time()
         art.meta.stage = "transcription"
 
         art.transcription = TranscriptionPart.model_construct(**result.__dict__)
         repo.save(art, include=["transcription"])
-
-        del art
-        free_audio_cache(cache, cache_key)
 
     @decorators.done_timing(
         stage_name="transcriber",

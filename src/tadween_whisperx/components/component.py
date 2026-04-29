@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from tadween_core.coord import StageContextConfig, WorkflowContext
+from tadween_core.coord import StageContextConfig
 from tadween_core.handler.defaults.downloader import DownloadHandler
 from tadween_core.handler.defaults.s3_downloader import S3DownloadHandler
 from tadween_core.task_queue import init_queue
@@ -28,7 +28,6 @@ from tadween_whisperx.components.normalizer.policy import NormalizerPolicy
 from tadween_whisperx.components.throttle import (
     STASH_EVENT,
     claim_stash,
-    release_stash,
     rollback_stash,
     stash_predicate,
 )
@@ -55,9 +54,7 @@ class WorkflowComponent(ABC):
         pass
 
     @abstractmethod
-    def add_to_workflow(
-        self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext
-    ):
+    def add_to_workflow(self, config: AppConfig, wf: Workflow):
         """Initializes the handler and calls wf.add_stage(...)"""
         pass
 
@@ -70,7 +67,9 @@ class DownloaderComponent(WorkflowComponent):
         return not config.input.type == "local"
 
     def add_to_workflow(
-        self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext
+        self,
+        config: AppConfig,
+        wf: Workflow,
     ):
         if config.input.type == "s3":
             handler = S3DownloadHandler(
@@ -109,7 +108,9 @@ class AudioLoaderComponent(WorkflowComponent):
         return True
 
     def add_to_workflow(
-        self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext
+        self,
+        config: AppConfig,
+        wf: Workflow,
     ):
         if config.loader.type == "torchcodec":
             handler = TorchCodecHandler()
@@ -123,11 +124,11 @@ class AudioLoaderComponent(WorkflowComponent):
             handler=handler,
             policy=LoaderPolicy(),
             context_config=StageContextConfig(
-                context=wf_context,
                 defer_predicate=stash_predicate,
                 defer_event=STASH_EVENT,
                 defer_state_update=claim_stash,
                 rollback_state_update=rollback_stash,
+                # done_state_update is handled manually in policy to avoid race conditions
             ),
             task_queue=init_queue(**config.loader.task_queue),
         )
@@ -141,7 +142,9 @@ class DiarizationComponent(WorkflowComponent):
         return config.diarization.enabled
 
     def add_to_workflow(
-        self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext
+        self,
+        config: AppConfig,
+        wf: Workflow,
     ):
         handler = DiarizationHandler(
             DiarizationModelConfig.model_construct(**config.diarization.__dict__)
@@ -154,8 +157,6 @@ class DiarizationComponent(WorkflowComponent):
             task_queue=init_queue(**config.diarization.task_queue),
             demands={"cuda": 1},
             context_config=StageContextConfig(
-                context=wf_context,
-                done_state_update=release_stash,
                 notify_events=[STASH_EVENT],
             ),
         )
@@ -169,7 +170,9 @@ class TranscriptionComponent(WorkflowComponent):
         return config.transcription.enabled
 
     def add_to_workflow(
-        self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext
+        self,
+        config: AppConfig,
+        wf: Workflow,
     ):
         cfg = TranscriptionModelConfig.model_construct(**config.transcription.__dict__)
         handler = TranscriptionHandler(cfg)
@@ -181,8 +184,6 @@ class TranscriptionComponent(WorkflowComponent):
             task_queue=init_queue(**config.transcription.task_queue),
             demands={"cuda": 1},
             context_config=StageContextConfig(
-                context=wf_context,
-                done_state_update=release_stash,
                 notify_events=[STASH_EVENT],
             ),
         )
@@ -196,10 +197,12 @@ class AlignmentComponent(WorkflowComponent):
         return config.alignment.enabled
 
     def add_to_workflow(
-        self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext
-    ):
+        self,
+        config: AppConfig,
+        wf: Workflow,
+    ) -> None:
         handler = AlignmentHandler(
-            AlignmentModelConfig.model_construct(**config.alignment.__dict__)
+            config=AlignmentModelConfig.model_construct(**config.alignment.__dict__)
         )
         handler.warmup()
 
@@ -210,8 +213,6 @@ class AlignmentComponent(WorkflowComponent):
             task_queue=init_queue(**config.alignment.task_queue),
             demands={"cuda": 1},
             context_config=StageContextConfig(
-                context=wf_context,
-                done_state_update=release_stash,
                 notify_events=[STASH_EVENT],
             ),
         )
@@ -225,7 +226,9 @@ class NormalizerComponent(WorkflowComponent):
         return config.normalizer.enabled
 
     def add_to_workflow(
-        self, config: AppConfig, wf: Workflow, wf_context: WorkflowContext
+        self,
+        config: AppConfig,
+        wf: Workflow,
     ):
         handler = NormalizeHandler(
             allowed_chars=config.normalizer.allowed_chars,
@@ -236,6 +239,9 @@ class NormalizerComponent(WorkflowComponent):
             self.name,
             handler=handler,
             policy=NormalizerPolicy(),
+            context_config=StageContextConfig(
+                notify_events=[STASH_EVENT],
+            ),
         )
 
 

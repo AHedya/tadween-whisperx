@@ -67,6 +67,6 @@ def timing_callback(stage: str, label: str, waiting: float, duration: float):
     console.print(
         rf"[bold blue]\[{stage}][/bold blue] "
         f"[cyan]{label}[/cyan] — "
-        f"Wait: [green]{waiting:.3f}s[/green] "
-        f"Duration: [yellow]{duration:.3f}s[/yellow]"
+        f"Wait: [yellow]{waiting:.3f}s[/yellow] "
+        f"Duration: [green]{duration:.3f}s[/green]"
     )

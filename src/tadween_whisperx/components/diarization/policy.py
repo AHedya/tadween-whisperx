@@ -9,7 +9,6 @@ from tadween_whisperx.components.artifact import (
     Artifact,
     CacheSchema,
 )
-from tadween_whisperx.components.throttle import free_audio_cache
 
 from .handler import DiarizationInput, DiarizationOutput
 from .schema import DiarizationPart
@@ -34,7 +33,6 @@ class DiarizationPolicy(
         if repo is None:
             return
         id = message.metadata.get("artifact_id")
-        cache_key = message.metadata.get("cache_key")
         art = repo.load(id, None)
         art.meta.updated_at = time.time()
         art.meta.stage = "diarization"
@@ -42,9 +40,6 @@ class DiarizationPolicy(
         # result already validated. skip part validation
         art.diarization = DiarizationPart.model_construct(**result.__dict__)
         repo.save(art, include=["diarization"])
-
-        del art
-        free_audio_cache(cache, cache_key)
 
     @decorators.done_timing(
         stage_name="diarizer",

@@ -11,7 +11,6 @@ from tadween_whisperx.components.artifact import (
     Artifact,
     CacheSchema,
 )
-from tadween_whisperx.components.throttle import free_audio_cache
 
 from .handler import AlignmentInput, AlignmentOutput
 from .schema import AlignmentPart
@@ -56,16 +55,12 @@ class AlignmentPolicy(
         if repo is None:
             return
         id = message.metadata.get("artifact_id")
-        cache_key = message.metadata.get("cache_key")
         art = repo.load(id, None)
         art.meta.updated_at = time.time()
         art.meta.stage = "aligned"
 
         art.alignment = AlignmentPart.model_construct(**result.__dict__)
         repo.save(art, include=["alignment"])
-
-        del art
-        free_audio_cache(cache, cache_key)
 
     @decorators.done_timing(
         stage_name="Alignment",
