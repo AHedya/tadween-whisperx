@@ -4,7 +4,7 @@ import yaml
 from typer.testing import CliRunner
 
 from tadween_whisperx.cli import app
-from tadween_whisperx.config import load_config
+from tadween_whisperx.config import load_config, save_config
 
 
 class TestConfigInit:
@@ -440,9 +440,8 @@ class TestRepoList:
         )
         config = load_config()
         config.repo.active = None
-        import tadween_whisperx.config as config_module
 
-        config_module.save_config(config)
+        save_config(config)
 
         result = runner.invoke(app, ["config", "repo", "list"])
         assert "No active profile" in result.output

@@ -2,6 +2,7 @@ import copy
 from pathlib import Path
 
 import pytest
+import yaml
 from pydantic import ValidationError
 
 from tadween_whisperx.config import (
@@ -290,7 +291,6 @@ class TestResetConfig:
     def test_reset_overwrites(self, tmp_config_dir):
         reset_config()
         assert tmp_config_dir.exists()
-        import yaml
 
         content = yaml.safe_load(tmp_config_dir.read_text(encoding="utf-8"))
         assert content["repo"]["active"] == "default"
