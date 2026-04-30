@@ -153,7 +153,10 @@ class WorkflowBuilder:
                     client_config=active.to_s3_client_config,
                 )
             else:
-                raise ConfigError(f"Unsupported repo type: {type(active)}")
+                self.logger.warning(
+                    f"Unsupported repo type or missing config: {type(active)}"
+                )
+                return None
         except ConfigError as e:
             self.logger.warning(
                 f"Failed initializing repo from config. Error: {e}. "

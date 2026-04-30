@@ -61,13 +61,13 @@ def release_cache(
     Callback fired by tadween-core when an artifact has finished processing.
     Releases the stash slot and clears the heavy audio_array from cache.
     """
-    # 1. Release stash slot regardless of cache presence
+    # release stash slot
     with ctx._lock:
         if ctx.state.pop(f"stash:{artifact_id}", False):
             ctx.decrement("active_stash", 1)
             ctx.notify(STASH_EVENT)
 
-    # 2. Centralized Cleanup: Clear audio_array from cache
+    # clear audio_array from cache
     cache: BaseCache[CacheSchema] | None = ctx.state.get("__cache__")
     actual_cache_key = cache_key or ctx.state.pop(f"cache_key:{artifact_id}", None)
 

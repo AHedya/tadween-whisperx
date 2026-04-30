@@ -14,7 +14,7 @@ from tadween_whisperx.components.alignment.handler import AlignmentHandler
 from tadween_whisperx.components.alignment.policy import AlignmentPolicy
 from tadween_whisperx.components.diarization.handler import DiarizationHandler
 from tadween_whisperx.components.diarization.handler import (
-    ModelConfig as DiarizationModelConfig,  # noqa
+    ModelConfig as DiarizationModelConfig,
 )
 from tadween_whisperx.components.diarization.policy import DiarizationPolicy
 from tadween_whisperx.components.loader.handler import (
@@ -128,7 +128,6 @@ class AudioLoaderComponent(WorkflowComponent):
                 defer_event=STASH_EVENT,
                 defer_state_update=claim_stash,
                 rollback_state_update=rollback_stash,
-                # done_state_update is handled manually in policy to avoid race conditions
             ),
             task_queue=init_queue(**config.loader.task_queue),
         )
