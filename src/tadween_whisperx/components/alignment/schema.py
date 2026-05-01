@@ -2,11 +2,20 @@ from numpy import ndarray
 from pydantic import BaseModel, ConfigDict
 from tadween_core.types.artifact.part import PicklePart
 
-from tadween_whisperx.schema import (
+from tadween_whisperx.components.schema import (
     SingleAlignedSegment,
     SingleSegment,
     SingleWordSegment,
 )
+
+
+class AlignmentConfig(BaseModel):
+    device: str = "cuda"
+    language_code: str | None = None
+    model_name: str | None = None
+    model_dir: str | None = None
+    model_cache_only: bool = False
+    max_models: int = 1
 
 
 class AlignmentInput(BaseModel):

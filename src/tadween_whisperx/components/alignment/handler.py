@@ -5,22 +5,12 @@ from collections import OrderedDict
 from typing import Any
 
 import torch
-from pydantic import BaseModel
 from tadween_core.handler import BaseHandler
 from whisperx import align, load_align_model
 
-from .schema import AlignmentInput, AlignmentOutput
+from .schema import AlignmentConfig, AlignmentInput, AlignmentOutput
 
 logger = logging.getLogger("tadween_whisperx")
-
-
-class AlignmentConfig(BaseModel):
-    device: str = "cuda"
-    language_code: str | None = None
-    model_name: str | None = None
-    model_dir: str | None = None
-    model_cache_only: bool = False
-    max_models: int = 1
 
 
 class AlignmentHandler(BaseHandler[AlignmentInput, AlignmentOutput]):

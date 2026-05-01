@@ -9,7 +9,6 @@ import tadween_whisperx.config as config_module
 from ...config import (
     config_exists,
     get_config,
-    redact_secrets,
     reset_config,
 )
 from .alignment import alignment_cmd
@@ -96,9 +95,6 @@ def show(
     components: list[ConfigComponent] = typer.Argument(
         None, help="Additional component(s) to show"
     ),
-    reveal: bool = typer.Option(
-        False, "--reveal", help="Show secret values (default: masked)"
-    ),
 ) -> None:
     """Display current configuration."""
     config = get_config()
@@ -110,8 +106,6 @@ def show(
         unique_names = list(dict.fromkeys(c.full_name for c in all_requested))
         data = {name: data[name] for name in unique_names}
 
-    if not reveal:
-        data = redact_secrets(data)
     rich.print(yaml.dump(data, default_flow_style=False, sort_keys=False))
 
     # valid feedback

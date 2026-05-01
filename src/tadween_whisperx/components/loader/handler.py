@@ -1,22 +1,11 @@
 import subprocess
-from pathlib import Path
 
 import av
 import numpy as np
-from pydantic import BaseModel, ConfigDict, SkipValidation
 from tadween_core.handler import BaseHandler
 from torchcodec.decoders import AudioDecoder
 
-
-class AudioLoaderInput(BaseModel):
-    file_path: Path
-    sr: int = 16_000
-
-
-class AudioLoaderOutput(BaseModel):
-    audio_array: SkipValidation[np.ndarray]
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+from .schema import AudioLoaderInput, AudioLoaderOutput
 
 
 class AudioLoader(BaseHandler[AudioLoaderInput, AudioLoaderOutput]):

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from tadween_core.handler.defaults.s3_downloader import S3DownloadInput
 
-from tadween_whisperx.components.loader.handler import AudioLoaderInput
+from tadween_whisperx.components.loader.schema import AudioLoaderInput
 from tadween_whisperx.config import HTTPInputConfig, LocalInputConfig, S3InputConfig
 from tadween_whisperx.scanners import SUPPORTED_AUDIO_EXTENSIONS, create_scanner
 from tadween_whisperx.scanners.base import ScanResult, generate_artifact_id

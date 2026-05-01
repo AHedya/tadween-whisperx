@@ -13,10 +13,10 @@ from tadween_whisperx.components.alignment.handler import (
 from tadween_whisperx.components.alignment.handler import AlignmentHandler
 from tadween_whisperx.components.alignment.policy import AlignmentPolicy
 from tadween_whisperx.components.diarization.handler import DiarizationHandler
-from tadween_whisperx.components.diarization.handler import (
-    ModelConfig as DiarizationModelConfig,
-)
 from tadween_whisperx.components.diarization.policy import DiarizationPolicy
+from tadween_whisperx.components.diarization.schema import (
+    DiarizationModelConfig,
+)
 from tadween_whisperx.components.loader.handler import (
     AudioLoader,
     AVHandler,

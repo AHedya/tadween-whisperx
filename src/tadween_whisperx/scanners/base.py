@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from tadween_core.handler.defaults.downloader import DownloadInput
 from tadween_core.handler.defaults.s3_downloader import S3DownloadInput
 
-from tadween_whisperx.components.loader.handler import AudioLoaderInput
+from tadween_whisperx.components.loader.schema import AudioLoaderInput
 from tadween_whisperx.config import BaseInputConfig
 
 SUPPORTED_AUDIO_EXTENSIONS = frozenset({".wav", ".mp3", ".m4a", ".flac", ".opus"})

@@ -1,4 +1,3 @@
-import logging
 import time
 
 import typer
@@ -10,12 +9,6 @@ from tadween_whisperx._logging import set_logger
 from tadween_whisperx.builder import WorkflowBuilder
 from tadween_whisperx.config import AppConfig
 from tadween_whisperx.scanners import BaseScanner
-
-# Disable model loading warnings and noisy logs
-DISABLED_LOGGERS = ["whisperx", "lightning.pytorch", "pytorch_lightning"]
-
-for logger_name in DISABLED_LOGGERS:
-    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
 
 class Runner:
@@ -51,6 +44,7 @@ class Runner:
             log_path=self.config.core_log_path,
         )
 
+        self.builder.preflight_check()
         self.wf = self.builder.build()
         self.scanner = self.builder.get_scanner()
         self._is_setup = True

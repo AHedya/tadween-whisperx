@@ -78,26 +78,6 @@ class TestConfigShow:
         assert "super-secret" not in result.output
         assert "***" in result.output
 
-    def test_show_reveal_shows_secrets(self, runner: CliRunner, isolated_config):
-        runner.invoke(app, ["config", "init"])
-        runner.invoke(
-            app,
-            [
-                "config",
-                "repo",
-                "s3",
-                "--bucket",
-                "b",
-                "--aws-access-key-id",
-                "k",
-                "--aws-secret-access-key",
-                "super-secret",
-            ],
-        )
-        result = runner.invoke(app, ["config", "show", "--reveal"])
-        assert result.exit_code == 0
-        assert "super-secret" in result.output
-
     def test_show_component_outputs_only_component(
         self, runner: CliRunner, isolated_config
     ):
@@ -305,7 +285,7 @@ class TestRepoS3:
         config = load_config()
         profile = config.repo.profiles["s3"]
         assert profile.prefix == "data/"
-        assert profile.aws_session_token == "tok"
+        assert profile.aws_session_token.get_secret_value() == "tok"
         assert profile.endpoint_url == "http://localhost:9000"
         assert profile.region_name == "eu-west-1"
 

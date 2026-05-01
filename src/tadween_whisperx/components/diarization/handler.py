@@ -1,23 +1,15 @@
 import logging
 
-from pydantic import BaseModel
 from tadween_core.handler import BaseHandler
 from whisperx.diarize import DiarizationPipeline
 
-from .schema import DiarizationInput, DiarizationOutput
+from .schema import DiarizationInput, DiarizationModelConfig, DiarizationOutput
 
 logger = logging.getLogger("tadween_whisperx")
 
 
-class ModelConfig(BaseModel):
-    token: str | None = None
-    model_name: str = "pyannote/speaker-diarization-community-1"
-    device: str = "cuda"
-    cache_dir: str | None = None
-
-
 class DiarizationHandler(BaseHandler[DiarizationInput, DiarizationOutput]):
-    def __init__(self, model_config: ModelConfig = ModelConfig()):
+    def __init__(self, model_config: DiarizationModelConfig = DiarizationModelConfig()):
         self.config = model_config
         self._model = None
 
@@ -33,7 +25,7 @@ class DiarizationHandler(BaseHandler[DiarizationInput, DiarizationOutput]):
             embeds = None
         return DiarizationOutput(diarization_df=df, speaker_embeddings=embeds)
 
-    def warmup(self, cfg: ModelConfig | None = None):
+    def warmup(self, cfg: DiarizationModelConfig | None = None):
         logger.info("warming up diarization model")
         cfg = cfg or self.config
         if self._model is not None:

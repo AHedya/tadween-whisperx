@@ -2,7 +2,6 @@ from typing import Any
 
 import numpy as np
 from pandas import DataFrame
-from pyannote.core.segment import Segment
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -11,6 +10,13 @@ from pydantic import (
     field_validator,
 )
 from tadween_core.types.artifact.part import PicklePart
+
+
+class DiarizationModelConfig(BaseModel):
+    token: str | None = None
+    model_name: str = "pyannote/speaker-diarization-community-1"
+    device: str = "cuda"
+    cache_dir: str | None = None
 
 
 class DiarizationInput(BaseModel):
@@ -35,6 +41,8 @@ class DiarizationOutput(BaseModel):
     @classmethod
     def validate_df(cls, value: Any) -> DataFrame:
         if isinstance(value, list):
+            from pyannote.core.segment import Segment
+
             for v in value:
                 v["segment"] = Segment(
                     start=v["segment"]["start"], end=v["segment"]["end"]

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from tadween_core.types.artifact.part import PicklePart
 
-from tadween_whisperx.schema import SingleSegment
+from tadween_whisperx.components.schema import SingleSegment
 
 
 class NormalizationOutput(BaseModel):

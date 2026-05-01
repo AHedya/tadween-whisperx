@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import copy
 import logging
+import os
 import shutil
 import tempfile
 from importlib.resources import files
@@ -10,17 +10,21 @@ from typing import Annotated, Literal
 
 import platformdirs
 import yaml
-from pydantic import BaseModel, Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 from tadween_core.types.s3_config import S3ClientConfig
 
-from tadween_whisperx.components.alignment.handler import (
+from tadween_whisperx.components.alignment.schema import (
     AlignmentConfig as AlignmentModelConfig,
 )
-from tadween_whisperx.components.diarization.handler import (
-    ModelConfig as DiarizationModelConfig,
+from tadween_whisperx.components.diarization.schema import (
+    DiarizationModelConfig,
 )
-from tadween_whisperx.components.transcription.handler import TranscriptionModelConfig
+from tadween_whisperx.components.transcription.schema import TranscriptionModelConfig
 
 _GLOBAL_CONFIG: AppConfig | None = None
 
@@ -29,10 +33,10 @@ APP_NAME = "tadween-whisperx"
 CONFIG_NAME = "config.yaml"
 USER_CONFIG_FILE = platformdirs.user_config_path(APP_NAME) / CONFIG_NAME
 DEFAULT_CONFIG_FILE = files("tadween_whisperx.resources").joinpath(CONFIG_NAME)
-logger = logging.getLogger("tadween_whisperx")
 
-_SECRET_FIELDS = {"aws_secret_access_key", "token", "aws_session_token"}
-_MASK = "***"
+ENV_FILE = os.environ.get("TADWEENX_ENV_FILE", ".env")
+SECRETS_PATH = Path(os.environ.get("TADWEENX_SECRETS_DIR", "/run/secrets"))
+logger = logging.getLogger("tadween_whisperx")
 
 
 class ConfigError(Exception):
@@ -59,9 +63,9 @@ class S3RepoConfig(BaseModel):
     type: Literal["s3"] = "s3"
     bucket: str
     prefix: str | None = None
-    aws_access_key_id: str
-    aws_secret_access_key: str
-    aws_session_token: str | None = None
+    aws_access_key_id: SecretStr | None = None
+    aws_secret_access_key: SecretStr | None = None
+    aws_session_token: SecretStr | None = None
     endpoint_url: str | None = None
     region_name: str = "us-east-1"
 
@@ -69,9 +73,11 @@ class S3RepoConfig(BaseModel):
     def to_s3_client_config(self):
 
         return S3ClientConfig(
-            access_key=self.aws_access_key_id,
-            secret_key=self.aws_secret_access_key,
-            session_token=self.aws_session_token,
+            access_key=self.aws_access_key_id.get_secret_value(),
+            secret_key=self.aws_secret_access_key.get_secret_value(),
+            session_token=self.aws_session_token.get_secret_value()
+            if self.aws_session_token is not None
+            else None,
             endpoint_url=self.endpoint_url,
             region=self.region_name,
         )
@@ -216,8 +222,82 @@ InputConfig = Annotated[
 ]
 
 
+class EnvironmentSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_ignore_empty=True,
+        validate_by_name=True,
+        secrets_dir=None if not SECRETS_PATH.exists() else SECRETS_PATH,
+    )
+
+    hf_home: Path | None = Field(default=None, validation_alias="HF_HOME")
+    pyannote_cache: Path | None = Field(default=None, validation_alias="PYANNOTE_CACHE")
+    transformers_cache: Path | None = Field(
+        default=None, validation_alias="TRANSFORMERS_CACHE"
+    )
+    torch_home: Path | None = Field(default=None, validation_alias="TORCH_HOME")
+
+    hf_hub_offline: bool = Field(default=True, validation_alias="HF_HUB_OFFLINE")
+    torch_force_no_weights_only_load: bool = Field(
+        default=True, validation_alias="TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"
+    )
+    pyannote_metrics_enabled: bool = Field(
+        default=False, validation_alias="PYANNOTE_METRICS_ENABLED"
+    )
+    lightning_whisper_log_level: str = Field(
+        default="ERROR", validation_alias="LIGHTNING_WHISPER_LOG_LEVEL"
+    )
+    cuda_visible_devices: str | None = Field(
+        default=None, validation_alias="CUDA_VISIBLE_DEVICES"
+    )
+    # secrets
+    hf_token: SecretStr | None = Field(default=None, validation_alias="HF_TOKEN")
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return init_settings, file_secret_settings, env_settings, dotenv_settings
+
+    def apply_to_os(self, overwrite: bool = False):
+        for key, val in self.model_dump().items():
+            if isinstance(val, SecretStr) or val is None:
+                continue
+            env_key = key.upper()
+            if overwrite or env_key not in os.environ:
+                if isinstance(val, bool):
+                    # str(True) equals 'True'.
+                    os.environ[env_key] = str(int(val))
+                else:
+                    os.environ[env_key] = str(val)
+
+
 class AppConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        extra="ignore",
+    )
+
+    env: EnvironmentSettings = Field(default_factory=EnvironmentSettings)
     repo: RepoProfiles = Field(default_factory=RepoProfiles)
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return file_secret_settings, init_settings, env_settings, dotenv_settings
+
     loader: LoaderConfig = Field(default_factory=LoaderConfig)
     input: InputConfig | None = Field(default=None)
 
@@ -287,15 +367,41 @@ def load_default_config() -> dict:
         return yaml.safe_load(f)
 
 
+def bootstrap_env() -> None:
+    """
+    Bootstraps the environment variables by loading them from the system
+    and .env files, and applying them to os.environ.
+    This should be called early to ensure underlying libraries see the settings.
+    """
+    env_settings = EnvironmentSettings()
+    env_settings.apply_to_os()
+
+
 def load_config() -> AppConfig:
     data = load_default_config()
-    return AppConfig(**data)
+    config = AppConfig(**data)
+    config.env.apply_to_os()
+    return config
+
+
+def _unwrap_secrets(obj):
+    if isinstance(obj, SecretStr):
+        return obj.get_secret_value()
+    if isinstance(obj, Path):
+        return str(obj)
+
+    if isinstance(obj, dict):
+        return {k: _unwrap_secrets(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_unwrap_secrets(i) for i in obj]
+    return obj
 
 
 def save_config(config: AppConfig) -> Path:
     global _GLOBAL_CONFIG
     USER_CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    data = config.model_dump(mode="json")
+    data = _unwrap_secrets(config.model_dump())
+
     with USER_CONFIG_FILE.open("w", encoding="utf-8") as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
     logger.info(f"Saved config to {USER_CONFIG_FILE}")
@@ -313,17 +419,3 @@ def reset_config() -> Path:
     shutil.copy(DEFAULT_CONFIG_FILE, USER_CONFIG_FILE)
     _GLOBAL_CONFIG = None
     return USER_CONFIG_FILE
-
-
-def redact_secrets(data: dict) -> dict:
-    result = copy.deepcopy(data)
-    _redact_recursive(result)
-    return result
-
-
-def _redact_recursive(d: dict) -> None:
-    for key, value in d.items():
-        if key in _SECRET_FIELDS:
-            d[key] = _MASK
-        elif isinstance(value, dict):
-            _redact_recursive(value)

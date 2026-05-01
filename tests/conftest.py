@@ -10,7 +10,7 @@ from pytest_mock.plugin import MockerFixture
 import tadween_whisperx.config as config_module
 from tadween_whisperx.components.alignment.schema import AlignmentOutput
 from tadween_whisperx.components.diarization.schema import DiarizationOutput
-from tadween_whisperx.components.loader.handler import AudioLoaderOutput
+from tadween_whisperx.components.loader.schema import AudioLoaderOutput
 from tadween_whisperx.components.transcription.schema import TranscriptionOutput
 from tadween_whisperx.config import (
     DEFAULT_CONFIG_FILE,

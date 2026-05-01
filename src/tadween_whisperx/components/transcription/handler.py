@@ -1,20 +1,15 @@
 import logging
 
-from pydantic import BaseModel
 from tadween_core.handler import BaseHandler
 from whisperx import load_model
 
-from .schema import TranscriptionInput, TranscriptionOutput
+from .schema import (
+    TranscriptionInput,
+    TranscriptionModelConfig,
+    TranscriptionOutput,
+)
 
 logger = logging.getLogger("tadween_whisperx")
-
-
-class TranscriptionModelConfig(BaseModel):
-    model: str = "large-v3"
-    device: str = "cuda"
-    compute_type: str = "float16"
-    language: str | None = None
-    threads: int = 4
 
 
 class TranscriptionHandler(BaseHandler[TranscriptionInput, TranscriptionOutput]):

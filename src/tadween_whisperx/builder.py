@@ -1,5 +1,6 @@
 import functools
 import logging
+import os
 from collections import OrderedDict
 
 from tadween_core.broker.memory import InMemoryBroker
@@ -75,6 +76,27 @@ class WorkflowBuilder:
                     self._resolve_active_dependencies(parent_name, active_nodes)
                 )
         return active_deps
+
+    def preflight_check(self):
+        """
+        Performs pre-flight checks such as verifying model availability and hardware readiness.
+        """
+        self.logger.debug("Performing pre-flight checks...")
+
+        # check model availability if offline
+        is_offline = os.environ.get("HF_HUB_OFFLINE") == "1"  # noqa
+        # ...
+
+        # cuda
+        import torch
+
+        if not torch.cuda.is_available():
+            self.logger.error("CUDA is not available.")
+            raise RuntimeError("CUDA must be installed.")
+        else:
+            self.logger.info(
+                f"CUDA is available. Device: {torch.cuda.get_device_name(0)}"
+            )
 
     def build(self) -> Workflow:
         self.config.validate()

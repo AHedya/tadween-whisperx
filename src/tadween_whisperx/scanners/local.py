@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from tadween_whisperx.components.loader.handler import AudioLoaderInput
+from tadween_whisperx.components.loader.schema import AudioLoaderInput
 from tadween_whisperx.config import LocalInputConfig
 from tadween_whisperx.scanners.base import (
     SUPPORTED_AUDIO_EXTENSIONS,

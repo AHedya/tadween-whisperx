@@ -1,5 +1,6 @@
-import copy
+import os
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -8,16 +9,83 @@ from pydantic import ValidationError
 from tadween_whisperx.config import (
     AppConfig,
     ConfigError,
+    EnvironmentSettings,
     JsonRepoConfig,
     LocalInputConfig,
     RepoProfiles,
     S3InputConfig,
     S3RepoConfig,
+    bootstrap_env,
     load_config,
-    redact_secrets,
     reset_config,
     save_config,
 )
+
+
+class TestEnvironmentSettings:
+    def test_defaults(self, monkeypatch: pytest.MonkeyPatch):
+        # Clear env to test pure defaults
+        monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
+        monkeypatch.delenv("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", raising=False)
+
+        env = EnvironmentSettings()
+        assert env.hf_hub_offline is True
+        assert env.torch_force_no_weights_only_load is True
+        assert env.pyannote_metrics_enabled is False
+        assert env.lightning_whisper_log_level == "ERROR"
+
+    def test_priority_secrets_vs_init(self, tmp_path):
+        secrets_dir = tmp_path / "secrets"
+        secrets_dir.mkdir()
+        (secrets_dir / "HF_HOME").write_text("/secrets/path")
+        env = EnvironmentSettings(hf_home="/init/path", _secrets_dir=str(secrets_dir))
+        # Init (YAML) should win over secrets
+        assert str(env.hf_home) == "/init/path"
+
+    def test_priority_secrets_vs_env(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HF_HOME", "/env/path")
+
+        secrets_dir = tmp_path / "secrets"
+        secrets_dir.mkdir()
+        (secrets_dir / "HF_HOME").write_text("/secrets/path")
+        env = EnvironmentSettings(_secrets_dir=str(secrets_dir))
+        # secrets should win over Env
+        assert str(env.hf_home) == "/secrets/path"
+
+    def test_priority_env_vs_dotenv(self, tmp_path, monkeypatch):
+        dotenv = tmp_path / ".env"
+        dotenv.write_text("HF_HOME=/dotenv/path")
+        monkeypatch.setenv("HF_HOME", "/env/path")
+
+        # Use _env_file in init to override the default
+        env = EnvironmentSettings(_env_file=str(dotenv))
+        assert str(env.hf_home) == "/env/path"
+
+    def test_apply_to_os(self, monkeypatch):
+        # Clear target env vars first
+        monkeypatch.delenv("HF_HOME", raising=False)
+        monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
+        monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
+
+        env = EnvironmentSettings(
+            hf_home="/test/hf",
+            hf_hub_offline=False,
+            cuda_visible_devices="0,1",
+        )
+
+        env.apply_to_os()
+
+        assert os.environ["HF_HOME"] == "/test/hf"
+        assert os.environ["HF_HUB_OFFLINE"] == "0"
+        assert os.environ["CUDA_VISIBLE_DEVICES"] == "0,1"
+
+
+class TestBootstrap:
+    @patch("tadween_whisperx.config.EnvironmentSettings")
+    def test_bootstrap_env(self, mock_env_class):
+        mock_env_instance = mock_env_class.return_value
+        bootstrap_env()
+        mock_env_instance.apply_to_os.assert_called_once()
 
 
 class TestJsonRepoConfig:
@@ -42,16 +110,6 @@ class TestJsonRepoConfig:
 
 
 class TestS3RepoConfig:
-    def test_required_fields(self):
-        config = S3RepoConfig(
-            bucket="my-bucket",
-            aws_access_key_id="AKIA123",
-            aws_secret_access_key="secret",
-        )
-        assert config.bucket == "my-bucket"
-        assert config.aws_access_key_id == "AKIA123"
-        assert config.aws_secret_access_key == "secret"
-
     def test_optional_fields_default_none(self):
         config = S3RepoConfig(
             bucket="my-bucket",
@@ -89,7 +147,7 @@ class TestS3RepoConfig:
             region_name="eu-west-1",
         )
         assert config.prefix == "pre/"
-        assert config.aws_session_token == "token"
+        assert config.aws_session_token.get_secret_value() == "token"
         assert config.endpoint_url == "http://localhost:9000"
         assert config.region_name == "eu-west-1"
 
@@ -298,46 +356,6 @@ class TestResetConfig:
         reset_config()
         content2 = yaml.safe_load(tmp_config_dir.read_text(encoding="utf-8"))
         assert content2["repo"]["active"] == "default"
-
-
-class TestRedactSecrets:
-    def test_redact_masks_secrets(self):
-        data = {
-            "aws_secret_access_key": "my-secret-key",
-            "token": "my-token",
-            "aws_session_token": "my-session",
-            "bucket": "my-bucket",
-        }
-        result = redact_secrets(data)
-        assert result["aws_secret_access_key"] == "***"
-        assert result["token"] == "***"
-        assert result["aws_session_token"] == "***"
-        assert result["bucket"] == "my-bucket"
-
-    def test_redact_preserves_non_secrets(self):
-        data = {"bucket": "my-bucket", "region_name": "us-east-1"}
-        result = redact_secrets(data)
-        assert result == data
-
-    def test_redact_nested(self):
-        data = {
-            "profiles": {
-                "remote": {
-                    "type": "s3",
-                    "aws_secret_access_key": "my-key",
-                    "bucket": "b",
-                }
-            }
-        }
-        result = redact_secrets(data)
-        assert result["profiles"]["remote"]["aws_secret_access_key"] == "***"
-        assert result["profiles"]["remote"]["bucket"] == "b"
-
-    def test_redact_does_not_mutate_original(self):
-        data = {"aws_secret_access_key": "my-secret", "bucket": "b"}
-        original = copy.deepcopy(data)
-        redact_secrets(data)
-        assert data == original
 
 
 class TestLocalInputConfig:

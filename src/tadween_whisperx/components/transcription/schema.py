@@ -2,7 +2,15 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict
 from tadween_core.types.artifact.part import PicklePart
 
-from tadween_whisperx.schema import SingleSegment
+from tadween_whisperx.components.schema import SingleSegment
+
+
+class TranscriptionModelConfig(BaseModel):
+    model: str = "large-v3"
+    device: str = "cuda"
+    compute_type: str = "float16"
+    language: str | None = None
+    threads: int = 4
 
 
 class TranscriptionInput(BaseModel):
