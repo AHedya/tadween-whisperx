@@ -60,7 +60,7 @@ def set_logger(level=logging.INFO, log_path=None, silent_console=False):
 def timing_callback(stage: str, label: str, waiting: float, duration: float):
     # Log to file (if configured)
     timing_logger.info(
-        f"[{stage} — {label}] Waiting: {waiting:.3f}s duration: {duration:.3f}s"
+        f"[{stage} — {label}] Waiting: {waiting:.2f}s duration: {duration:.2f}s"
     )
 
     # Rich console feedback

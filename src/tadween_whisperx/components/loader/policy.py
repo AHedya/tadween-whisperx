@@ -67,7 +67,7 @@ class LoaderPolicy(
                 root=ArtifactRoot(id=id),
                 meta=MetaModel(
                     stage="loaded",
-                    local_path=message.metadata.get("file_name", ""),
+                    source=message.metadata.get("file_name", ""),
                     updated_at=time.time(),
                 ),
             )

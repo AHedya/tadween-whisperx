@@ -1,3 +1,4 @@
+import logging
 import time
 
 import typer
@@ -43,6 +44,9 @@ class Runner:
             level=self.config.core_log_level,
             log_path=self.config.core_log_path,
         )
+        DISABLED_LOGGERS = ["whisperx", "lightning.pytorch", "pytorch_lightning"]
+        for i in DISABLED_LOGGERS:
+            logging.getLogger(i).setLevel(logging.CRITICAL)
 
         self.builder.preflight_check()
         self.wf = self.builder.build()

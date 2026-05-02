@@ -1,20 +1,20 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 from pydantic import BaseModel
 from tadween_core.types.artifact.base import BaseArtifact, RootModel
 
-from .alignment.schema import AlignmentPart
-from .diarization.schema import DiarizationPart
-from .normalizer.schema import NormalizationPart
-from .transcription.schema import TranscriptionPart
+from .alignment.schema import AlignmentOutput, AlignmentPart
+from .diarization.schema import DiarizationOutput, DiarizationPart
+from .normalizer.schema import NormalizationOutput, NormalizationPart
+from .transcription.schema import TranscriptionOutput, TranscriptionPart
 
 
 class MetaModel(BaseModel):
     stage: str = "init"
-    local_path: str
+    source: str
     updated_at: float
 
 
@@ -22,10 +22,10 @@ class MetaModel(BaseModel):
 class CacheSchema:
     file_path: Path | None = None
     audio_array: np.ndarray | None = None
-    transcription: Any | None = None  # Using Any to avoid circular imports
-    diarization: Any | None = None
-    alignment: Any | None = None
-    normalization: Any | None = None
+    transcription: TranscriptionOutput | None = None
+    diarization: DiarizationOutput | None = None
+    alignment: AlignmentOutput | None = None
+    normalization: NormalizationOutput | None = None
 
     # For SimpleCache manual management if needed
     audio_array_touch_counter: int = 0
