@@ -3,8 +3,8 @@
 Enhancement and priority guide for `tadween-whisperx`.
 
 ## Testing & Validation
-- [ ] **Unit Tests for Builder**: Test `WorkflowBuilder` to ensure DAG integrity when various components are disabled.
-- [ ] **Integration Tests**: Create an end-to-end test suite using a small sample audio file to verify the pipeline flow.
+- [x] **Unit Tests for Builder**: Test `WorkflowBuilder` to ensure DAG integrity when various components are disabled.
+- [x] **Integration Tests**: Create an end-to-end test suite using a small sample audio file to verify the pipeline flow.
 - [ ] **Policy Tests**: Test individual stage policies.
 
 ## Observability & UI
@@ -19,13 +19,10 @@ Enhancement and priority guide for `tadween-whisperx`.
 
 ## DX & Features
 - [x] **Scanner pattern**: Add matching patterns for exclusion or strict include for scanners.
-- [ ] **Documentation**: Document the "Handler/Policy/Schema" pattern and the stashing mechanism in a new `docs/` folder or updated `README.md`.
-- [ ] **Lazy load**
-- [ ] **Multiple Repo Support**: Enhance the CLI to easily switch between different S3/Local repo profiles.
+- [x] **Documentation**: Document the "Handler/Policy/Schema" pattern and the stashing mechanism in a new `docs/` folder or updated `README.md`.
+- [x] **Lazy load**
+- [x] **Multiple Repo Support**: Enhance the CLI to easily switch between different S3/Local repo profiles.
 - [ ] **Export Formats**: Add a post-processing stage to export results into common formats (SRT, VTT, JSON, TXT).
-
-## Cleanup
-- [ ] **Prototype Migration**: Review `main.py` and migrate any useful performance-tracking or debugging logic into the core package or tests.
 
 ## Production
 - [ ] **Dockerfile**: Write dockerfile for encapsulating `tadween-whisperx` as a service. Bake essential models into the image.

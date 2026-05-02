@@ -17,8 +17,9 @@ While the underlying models (Whisper, Pyannote) determine the ASR accuracy, **ta
 `Downloader`
     ↓
   `Loader` ─┬─> `Diarization`
-            └─> `Transcription` -> `Alignment` -> `Normalization`
-```
+            └─> `Transcription` ─┬─> `Alignment` 
+                                 └─> `Normalization`
+``` 
 
 ## Quick Start
 
