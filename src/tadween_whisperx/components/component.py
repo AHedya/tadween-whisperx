@@ -124,10 +124,10 @@ class AudioLoaderComponent(WorkflowComponent):
             handler=handler,
             policy=LoaderPolicy(),
             context_config=StageContextConfig(
-                defer_predicate=stash_predicate,
-                defer_event=STASH_EVENT,
-                defer_state_update=claim_stash,
-                rollback_state_update=rollback_stash,
+                event=STASH_EVENT,
+                predicate=stash_predicate,
+                on_acquire=claim_stash,
+                on_rollback=rollback_stash,
             ),
             task_queue=init_queue(**config.loader.task_queue),
         )
@@ -156,7 +156,7 @@ class DiarizationComponent(WorkflowComponent):
             task_queue=init_queue(**config.diarization.task_queue),
             demands={"cuda": 1},
             context_config=StageContextConfig(
-                notify_events=[STASH_EVENT],
+                notify_on_release=[STASH_EVENT],
             ),
         )
 
@@ -183,7 +183,7 @@ class TranscriptionComponent(WorkflowComponent):
             task_queue=init_queue(**config.transcription.task_queue),
             demands={"cuda": 1},
             context_config=StageContextConfig(
-                notify_events=[STASH_EVENT],
+                notify_on_release=[STASH_EVENT],
             ),
         )
 
@@ -212,7 +212,7 @@ class AlignmentComponent(WorkflowComponent):
             task_queue=init_queue(**config.alignment.task_queue),
             demands={"cuda": 1},
             context_config=StageContextConfig(
-                notify_events=[STASH_EVENT],
+                notify_on_release=[STASH_EVENT],
             ),
         )
 
@@ -239,7 +239,7 @@ class NormalizerComponent(WorkflowComponent):
             handler=handler,
             policy=NormalizerPolicy(),
             context_config=StageContextConfig(
-                notify_events=[STASH_EVENT],
+                notify_on_release=[STASH_EVENT],
             ),
         )
 

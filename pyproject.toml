@@ -7,7 +7,7 @@ authors = [{ name = "Abdulrahman Hedya", email = "abdohedya19@gmail.com" }]
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "whisperx>=3.8.4",
-    "tadween-core[s3]>=0.1.0a14",
+    "tadween-core[s3]>=0.1.0b2",
     "torchcodec==0.6.0",
     "torch==2.8.0+cu128",
     "torchaudio==2.8.0+cu128",
