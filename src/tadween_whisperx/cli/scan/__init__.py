@@ -1,8 +1,11 @@
+from pathlib import Path
+from typing import Annotated
+
 import typer
 from rich.console import Console
 
 from tadween_whisperx import scanners
-from tadween_whisperx.config import AppConfig, get_config
+from tadween_whisperx.config import AppConfig
 
 from ..shared import add_input_commands
 
@@ -45,11 +48,39 @@ def _execute_scan(config: AppConfig) -> None:
 
 
 @app.callback(invoke_without_command=True)
-def scan(ctx: typer.Context) -> None:
-    """Scan for compatible files using the default configuration."""
-    if ctx.invoked_subcommand is None:
-        config = get_config()
-        _execute_scan(config)
+def scan(
+    ctx: typer.Context,
+    config_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--config",
+            "-c",
+            help="Path to a custom configuration file. Overrides default and user config.",
+            exists=True,
+            file_okay=True,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
+    ] = None,
+) -> None:
+    """Scan for compatible files."""
+    from tadween_whisperx.config import bootstrap_env, load_config, set_config
+
+    try:
+        # 1. Bootstrap environment variables first
+        bootstrap_env()
+
+        # 2. Load and set the global config
+        config = load_config(config_path)
+        set_config(config)
+
+        # 3. If no subcommand (local, s3, http), execute with the loaded config
+        if ctx.invoked_subcommand is None:
+            _execute_scan(config)
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {e}")
+        raise typer.Exit(code=1)
 
 
 add_input_commands(

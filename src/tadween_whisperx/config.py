@@ -377,8 +377,23 @@ def bootstrap_env() -> None:
     env_settings.apply_to_os()
 
 
-def load_config() -> AppConfig:
-    data = load_default_config()
+def load_config(path: Path | None = None) -> AppConfig:
+    if path:
+        if not path.exists():
+            raise ConfigError(f"Config file not found: {path}")
+        try:
+            with path.open("r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            if not isinstance(data, dict):
+                raise ConfigError(f"Config file {path} is not a valid YAML mapping")
+            logger.debug(f"Loaded config from {path}")
+        except Exception as e:
+            if isinstance(e, ConfigError):
+                raise
+            raise ConfigError(f"Error loading config from {path}: {e}") from e
+    else:
+        data = load_default_config()
+
     config = AppConfig(**data)
     config.env.apply_to_os()
     return config
