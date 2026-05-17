@@ -53,11 +53,21 @@ uv run tadweenx run http https://assets.hedya.dev/audio/en-1-000842-vlogbrothers
 uv run tadweenx scan local ./audio/ --include "*.wav" --exclude "glob-to-exclude"
 ```
 
-## Documentation
+## Production & Docker
 
-For deep technical details, refer to the following subpackage documentation:
+For production environments, **tadween-whisperx** is designed to run as a containerized service. Due to gated model licensing (e.g., Pyannote), we do not publish a public image; users are encouraged to build their own using the provided optimized `Dockerfile`.
+
+See [**README.production.md**](README.production.md) for more details
+## Production Readiness & Shared Responsibility
+
+**tadween-whisperx** is a robust wrapper ready for many production use cases out-of-the-box. It leverages [tadween-core](https://github.com/AHedya/tadween-core) to handle complex orchestration, resource management, and graceful shutdowns. 
+
+However, achieving "enterprise-grade" readiness for unmonitored, highly-concurrent environments (like serverless batch processing) is a **shared responsibility**. While the framework provides the hooks and architecture, developers must configure specific operational concerns—such as **Retry Logic**, **Idempotency**, and **Custom Observability**—based on their unique environment and workflow needs.
+
+For deep technical details on how to extend the application for these serious use cases, refer to the following subpackage documentation:
 
 - [**CLI Documentation**](src/tadween_whisperx/cli/README.md): Full command reference and examples.
+- [**Production docs**](README.production.md): Detailed build strategies, shared responsibility guidelines, and production-ready examples. 
 - [**Pipeline Components**](src/tadween_whisperx/components/README.md): Details on the Triad pattern and implementation of `tadween-core` contracts.
 - [**Scanners & Input Sources**](src/tadween_whisperx/scanners/README.md): How local, S3, and HTTP sources are handled.
 - [**Agent Guidance (AGENTS.md)**](AGENTS.md): Foundational mandates and architectural rules for AI contributors.

@@ -49,7 +49,7 @@ loader:
 
 diarization:
   enabled: false
-  model_name: "pyannote/speaker-diarization-community-1"
+  model_id: "pyannote/speaker-diarization-community-1"
   device: "cuda"
   token: null
   cache_dir: null
@@ -60,7 +60,7 @@ diarization:
 
 transcription:
   enabled: true
-  model: "large-v3"
+  model_id: "large-v3"
   device: "cuda"
   compute_type: "float16"
   threads: 4
@@ -74,7 +74,7 @@ alignment:
   enabled: false
   language_code: null # relise on transcription auto-detection if language is null on trancription config
   device: "cuda"
-  model_name: null
+  model_id: null
   model_dir: null
   model_cache_only: false
   task_queue:

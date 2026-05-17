@@ -12,7 +12,7 @@ from tadween_whisperx.components.schema import (
 class AlignmentConfig(BaseModel):
     device: str = "cuda"
     language_code: str | None = None
-    model_name: str | None = None
+    model_id: str | None = None
     model_dir: str | None = None
     model_cache_only: bool = False
     max_models: int = 1

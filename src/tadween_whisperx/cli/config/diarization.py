@@ -8,15 +8,15 @@ def diarization_cmd(
     enabled: bool | None = typer.Option(
         None, "--enabled/--no-enabled", help="Enable or disable diarization"
     ),
-    model_name: str | None = typer.Option(None, "--model-name", help="Model name"),
+    model_id: str | None = typer.Option(None, "--model-id", help="Model ID"),
     device: str | None = typer.Option(None, "--device", help="Device to use"),
-    token: str | None = typer.Option(None, "--token", help="HuggingFace token"),
+    token: str | None = typer.Option(None, "--token", help="Hugging Face token"),
     cache_dir: str | None = typer.Option(None, "--cache-dir", help="Cache directory"),
 ) -> None:
     """Configure diarization settings."""
     updates = {
         "enabled": enabled,
-        "model_name": model_name,
+        "model_id": model_id,
         "device": device,
         "token": token,
         "cache_dir": cache_dir,

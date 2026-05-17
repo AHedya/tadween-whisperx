@@ -33,9 +33,9 @@ class TranscriptionHandler(BaseHandler[TranscriptionInput, TranscriptionOutput])
             return
 
         cfg = cfg.model_dump()
-        model = cfg.pop("model")
+        model_id = cfg.pop("model_id")
         device = cfg.pop("device")
-        self._model = load_model(model, device, **cfg)
+        self._model = load_model(model_id, device, **cfg)
 
     def shutdown(self):
         import gc

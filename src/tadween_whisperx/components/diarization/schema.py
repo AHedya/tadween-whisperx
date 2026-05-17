@@ -14,7 +14,7 @@ from tadween_core.types.artifact.part import PicklePart
 
 class DiarizationModelConfig(BaseModel):
     token: str | None = None
-    model_name: str = "pyannote/speaker-diarization-community-1"
+    model_id: str = "pyannote/speaker-diarization-community-1"
     device: str = "cuda"
     cache_dir: str | None = None
 

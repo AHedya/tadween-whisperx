@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
@@ -262,10 +262,8 @@ class TestWhisperXConfig:
         assert config.repo.active is None
         assert config.repo.profiles == {}
         assert config.input is None
-        assert (
-            config.diarization.model_name == "pyannote/speaker-diarization-community-1"
-        )
-        assert config.transcription.model == "large-v3"
+        assert config.diarization.model_id == "pyannote/speaker-diarization-community-1"
+        assert config.transcription.model_id == "large-v3"
         assert config.alignment.enabled is False
         assert config.normalizer.enabled is True
 
@@ -502,3 +500,68 @@ class TestInputConfigUnion:
                     }
                 }
             )
+
+
+class TestLoadConfigVariousResources:
+    @patch("urllib.request.urlopen")
+    def test_load_config_from_url(self, mock_urlopen, tmp_path):
+        # Setup mock response
+        mock_config = {
+            "transcription": {"model_id": "tiny"},
+            "diarization": {"enabled": False},
+        }
+        mock_response = MagicMock()
+        mock_response.read.return_value = yaml.dump(mock_config).encode("utf-8")
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
+
+        url = "https://example.com/config.yaml"
+        config = load_config(url)
+
+        assert config.transcription.model_id == "tiny"
+        assert config.diarization.enabled is False
+        mock_urlopen.assert_called_once_with(url)
+
+    def test_load_config_fallback_on_missing_file(self, monkeypatch):
+        # Ensure fallback is enabled (default)
+        monkeypatch.setenv("TADWEENX_DEFAULT_FALLBACK", "1")
+
+        # Load a non-existent file
+        config = load_config("non_existent_file.yaml")
+
+        # Should fallback to default config
+        assert isinstance(config, AppConfig)
+        assert config.transcription.model_id == "large-v3"  # Default value
+
+    def test_load_config_no_fallback_on_missing_file(self, monkeypatch):
+        # Disable fallback
+        monkeypatch.setenv("TADWEENX_DEFAULT_FALLBACK", "0")
+
+        # Loading a non-existent file should now raise an error
+        with pytest.raises(ConfigError):
+            load_config("non_existent_file.yaml")
+
+    @patch("urllib.request.urlopen")
+    def test_load_config_fallback_on_url_failure(self, mock_urlopen, monkeypatch):
+        # Setup mock to raise error
+        mock_urlopen.side_effect = Exception("Connection Refused")
+        monkeypatch.setenv("TADWEENX_DEFAULT_FALLBACK", "1")
+
+        config = load_config("https://fail.com/config.yaml")
+
+        # Should fallback to default config
+        assert isinstance(config, AppConfig)
+        assert config.transcription.model_id == "large-v3"
+
+    def test_invalid_yaml_fallback(self, tmp_path, monkeypatch):
+        # Create a corrupt YAML file
+        corrupt_file = tmp_path / "corrupt.yaml"
+        corrupt_file.write_text("invalid: [yaml: structure")
+
+        monkeypatch.setenv("TADWEENX_DEFAULT_FALLBACK", "1")
+
+        config = load_config(corrupt_file)
+
+        # Should fallback to default
+        assert isinstance(config, AppConfig)
+        assert config.transcription.model_id == "large-v3"

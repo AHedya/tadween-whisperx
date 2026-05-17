@@ -6,7 +6,7 @@ from tadween_whisperx.components.schema import SingleSegment
 
 
 class TranscriptionModelConfig(BaseModel):
-    model: str = "large-v3"
+    model_id: str = "large-v3"
     device: str = "cuda"
     compute_type: str = "float16"
     language: str | None = None

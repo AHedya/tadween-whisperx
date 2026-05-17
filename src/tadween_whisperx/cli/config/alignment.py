@@ -9,7 +9,7 @@ def alignment_cmd(
         None, "--enabled/--no-enabled", help="Enable or disable alignment"
     ),
     device: str | None = typer.Option(None, "--device", help="Device to use"),
-    model_name: str | None = typer.Option(None, "--model-name", help="Model name"),
+    model_id: str | None = typer.Option(None, "--model-id", help="Model ID"),
     language_code: str | None = typer.Option(
         None, "--language-code", help="Default language code"
     ),
@@ -25,7 +25,7 @@ def alignment_cmd(
     updates = {
         "enabled": enabled,
         "device": device,
-        "model_name": model_name,
+        "model_id": model_id,
         "language_code": language_code,
         "model_dir": model_dir,
         "model_cache_only": model_cache_only,

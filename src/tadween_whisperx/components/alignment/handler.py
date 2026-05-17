@@ -48,7 +48,7 @@ class AlignmentHandler(BaseHandler[AlignmentInput, AlignmentOutput]):
             model, metadata = load_align_model(
                 language_code=lang,
                 device=cfg.device,
-                model_name=cfg.model_name,
+                model_name=cfg.model_id,
                 model_dir=cfg.model_dir,
                 model_cache_only=cfg.model_cache_only,
             )

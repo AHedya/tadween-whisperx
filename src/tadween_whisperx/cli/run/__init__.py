@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -15,14 +14,12 @@ console = Console()
 def run(
     ctx: typer.Context,
     config_path: Annotated[
-        Path | None,
+        str | None,
         typer.Option(
             "--config",
             "-c",
-            help="Path to a custom configuration file. Overrides default and user config.",
-            exists=True,
+            help="Path or URL to a custom configuration file. Overrides default and user config.",
             dir_okay=False,
-            resolve_path=True,
         ),
     ] = None,
 ):

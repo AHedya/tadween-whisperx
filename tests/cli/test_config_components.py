@@ -29,7 +29,7 @@ class TestConfigDiarization:
                 "diarization",
                 "--device",
                 "cpu",
-                "--model-name",
+                "--model-id",
                 "custom",
                 "--token",
                 "abc",
@@ -40,7 +40,7 @@ class TestConfigDiarization:
         assert result.exit_code == 0
         config = load_config()
         assert config.diarization.device == "cpu"
-        assert config.diarization.model_name == "custom"
+        assert config.diarization.model_id == "custom"
         assert config.diarization.token == "abc"
         assert config.diarization.cache_dir == "/tmp/cache"
 
@@ -70,7 +70,7 @@ class TestConfigTranscription:
                 "transcription",
                 "--device",
                 "cpu",
-                "--model",
+                "--model-id",
                 "small",
                 "--compute-type",
                 "int8",
@@ -83,7 +83,7 @@ class TestConfigTranscription:
         assert result.exit_code == 0
         config = load_config()
         assert config.transcription.device == "cpu"
-        assert config.transcription.model == "small"
+        assert config.transcription.model_id == "small"
         assert config.transcription.compute_type == "int8"
         assert config.transcription.language == "en"
         assert config.transcription.threads == 8
@@ -112,7 +112,7 @@ class TestConfigAlignment:
                 "alignment",
                 "--device",
                 "cpu",
-                "--model-name",
+                "--model-id",
                 "custom_align",
                 "--language-code",
                 "en",
@@ -123,7 +123,7 @@ class TestConfigAlignment:
         assert result.exit_code == 0
         config = load_config()
         assert config.alignment.device == "cpu"
-        assert config.alignment.model_name == "custom_align"
+        assert config.alignment.model_id == "custom_align"
         assert config.alignment.language_code == "en"
         assert config.alignment.max_models == 2
 

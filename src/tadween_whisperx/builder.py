@@ -83,10 +83,6 @@ class WorkflowBuilder:
         """
         self.logger.debug("Performing pre-flight checks...")
 
-        # check model availability if offline
-        is_offline = os.environ.get("HF_HUB_OFFLINE") == "1"  # noqa
-        # ...
-
         # cuda
         import torch
 
@@ -97,6 +93,59 @@ class WorkflowBuilder:
             self.logger.info(
                 f"CUDA is available. Device: {torch.cuda.get_device_name(0)}"
             )
+
+        # check model availability
+        hf_offline = os.environ.get("HF_HUB_OFFLINE") == "1"
+        hf_token = os.environ.get("HF_TOKEN") or (
+            self.config.diarization.token if self.config.diarization.enabled else None
+        )
+
+        # Stages to check
+        # (stage_attr, repo_id, is_gated)
+        checks = []
+        if self.config.diarization.enabled:
+            checks.append(("diarization", self.config.diarization.model_id, True))
+        if self.config.transcription.enabled:
+            m_id = self.config.transcription.model_id
+            # Common mapping for faster-whisper
+            repo_id = m_id
+            if m_id in [
+                "tiny",
+                "base",
+                "small",
+                "medium",
+                "large-v1",
+                "large-v2",
+                "large-v3",
+            ]:
+                repo_id = f"Systran/faster-whisper-{m_id}"
+            checks.append(("transcription", repo_id, False))
+        if self.config.alignment.enabled and self.config.alignment.model_id:
+            checks.append(("alignment", self.config.alignment.model_id, False))
+
+        for attr, repo_id, is_gated in checks:
+            if not self._is_model_available(repo_id):
+                if hf_offline:
+                    self.logger.warning(
+                        f"Offline mode: Model '{repo_id}' for stage '{attr}' not found. Disabling stage."
+                    )
+                    getattr(self.config, attr).enabled = False
+                elif is_gated and not hf_token:
+                    self.logger.warning(
+                        f"Gated model '{repo_id}' for stage '{attr}' requires HF_TOKEN and is not cached. Disabling stage."
+                    )
+                    getattr(self.config, attr).enabled = False
+                else:
+                    self.logger.warning(
+                        f"Model '{repo_id}' for stage '{attr}' is missing. Downloading now..."
+                    )
+                    try:
+                        self._download_model(repo_id, token=hf_token)
+                    except Exception as e:
+                        self.logger.error(
+                            f"Failed to download model '{repo_id}': {e}. Disabling stage."
+                        )
+                        getattr(self.config, attr).enabled = False
 
     def build(self) -> Workflow:
         self.config.validate()
@@ -187,3 +236,20 @@ class WorkflowBuilder:
             return None
         except Exception as e:
             raise e
+
+    def _is_model_available(self, repo_id: str) -> bool:
+        try:
+            from huggingface_hub import scan_cache_dir
+
+            for repo in scan_cache_dir().repos:
+                if repo.repo_id == repo_id:
+                    return True
+        except Exception:
+            pass
+        return False
+
+    def _download_model(self, repo_id: str, token: str | None = None):
+        from huggingface_hub import snapshot_download
+
+        # We don't specify destination, let it use HF_HOME/hub
+        snapshot_download(repo_id=repo_id, token=token)

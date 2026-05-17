@@ -75,7 +75,7 @@ def release_cache(
         with cache.lock:
             if actual_cache_key in cache:
                 cache.delete_bucket(actual_cache_key)
-                logging.getLogger("tadween.cache").info(
+                logging.getLogger("tadween.cache").debug(
                     f"CACHE cleanup for `{actual_cache_key}`"
                 )
         gc.collect()

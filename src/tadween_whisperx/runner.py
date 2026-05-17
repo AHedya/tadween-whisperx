@@ -1,5 +1,6 @@
 import logging
 import time
+from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -8,15 +9,23 @@ from tadween_core.workflow import Workflow
 
 from tadween_whisperx._logging import set_logger
 from tadween_whisperx.builder import WorkflowBuilder
-from tadween_whisperx.config import AppConfig
+from tadween_whisperx.config import AppConfig, load_config
 from tadween_whisperx.scanners import BaseScanner
 
 
 class Runner:
-    def __init__(self, config: AppConfig, console: Console | None = None):
-        self.config = config
+    def __init__(
+        self,
+        config: AppConfig | Path | str | None = None,
+        console: Console | None = None,
+    ):
+        if isinstance(config, AppConfig):
+            self.config = config
+        else:
+            self.config = load_config(config)
+
         self.console = console or Console()
-        self.builder = WorkflowBuilder(config)
+        self.builder = WorkflowBuilder(self.config)
         self.wf: Workflow | None = None
         self.scanner: BaseScanner | None = None
         self._start_time: float | None = None

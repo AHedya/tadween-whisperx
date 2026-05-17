@@ -8,7 +8,7 @@ def transcription_cmd(
     enabled: bool | None = typer.Option(
         None, "--enabled/--no-enabled", help="Enable or disable transcription"
     ),
-    model: str | None = typer.Option(None, "--model", help="Model name"),
+    model_id: str | None = typer.Option(None, "--model-id", help="Model ID"),
     device: str | None = typer.Option(None, "--device", help="Device to use"),
     compute_type: str | None = typer.Option(
         None, "--compute-type", help="Compute type (e.g., float16)"
@@ -20,7 +20,7 @@ def transcription_cmd(
     """Configure transcription settings."""
     updates = {
         "enabled": enabled,
-        "model": model,
+        "model_id": model_id,
         "device": device,
         "compute_type": compute_type,
         "batch_size": batch_size,

@@ -255,6 +255,10 @@ class EnvironmentSettings(BaseSettings):
     # secrets
     hf_token: SecretStr | None = Field(default=None, validation_alias="HF_TOKEN")
 
+    tadweenx_default_fallback: bool = Field(
+        default=True, validation_alias="TADWEENX_DEFAULT_FALLBACK"
+    )
+
     @classmethod
     def settings_customise_sources(
         cls,
@@ -377,26 +381,47 @@ def bootstrap_env() -> None:
     env_settings.apply_to_os()
 
 
-def load_config(path: Path | None = None) -> AppConfig:
-    if path:
-        if not path.exists():
-            raise ConfigError(f"Config file not found: {path}")
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-            if not isinstance(data, dict):
-                raise ConfigError(f"Config file {path} is not a valid YAML mapping")
-            logger.debug(f"Loaded config from {path}")
-        except Exception as e:
-            if isinstance(e, ConfigError):
-                raise
-            raise ConfigError(f"Error loading config from {path}: {e}") from e
-    else:
-        data = load_default_config()
+def load_config(path: Path | str | None = None) -> AppConfig:
+    env = EnvironmentSettings()
+    try:
+        if path:
+            path_str = str(path)
+            if path_str.startswith(("http://", "https://")):
+                logger.info(f"Downloading config from {path_str}")
+                import urllib.request
 
-    config = AppConfig(**data)
-    config.env.apply_to_os()
-    return config
+                with urllib.request.urlopen(path_str) as response:
+                    data = yaml.safe_load(response.read())
+            else:
+                config_path = Path(path)
+                if not config_path.exists():
+                    raise ConfigError(f"Config file not found: {path}")
+                with config_path.open("r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+
+            if not isinstance(data, dict):
+                raise ConfigError(f"Config at {path} is not a valid YAML mapping")
+            logger.debug(f"Loaded config from {path}")
+        else:
+            data = load_default_config()
+
+        config = AppConfig(**data)
+        config.env.apply_to_os()
+        return config
+    except Exception as e:
+        if not env.tadweenx_default_fallback:
+            logger.error(
+                f"Failed to load config from {path} and fallback is disabled: {e}"
+            )
+            raise
+
+        logger.warning(
+            f"Failed to load config from {path}. Falling back to default config. Error: {e}"
+        )
+        data = load_default_config()
+        config = AppConfig(**data)
+        config.env.apply_to_os()
+        return config
 
 
 def _unwrap_secrets(obj):
